@@ -26,6 +26,10 @@ def FeatureF : SubtargetFeature<"f", "HasF", "true",
 def FeatureD : SubtargetFeature<"d", "HasD", "true",
                                 "Supports Double-Precision Floating-Point.">;
 
+def Feature5CY : SubtargetFeature<"5cy", "Is5CY", "true",
+                                "Supports Double-Precision Floating-Point.">;
+
+
 def FeatureRV32 : SubtargetFeature<"rv32", "RISCVArchVersion", "RV32", 
                                    "RV32 ISA Support">;
 def FeatureRV64 : SubtargetFeature<"rv64", "RISCVArchVersion", "RV64", 
@@ -46,6 +50,7 @@ def : Proc<"RV32IMAFD", [FeatureRV32,FeatureM,FeatureA,FeatureF,FeatureD]>;
 def : Proc<"RV64I", [FeatureRV64]>;
 def : Proc<"RV64IMAFD", [FeatureRV64,FeatureM,FeatureA,FeatureF,FeatureD]>;
 def : Proc<"Rocket", [FeatureRV64,FeatureM,FeatureA,FeatureF,FeatureD]>;
+def : Proc<"Pulpino", [FeatureRV32,Feature5CY]>;
 
 //===----------------------------------------------------------------------===//
 // Register file description

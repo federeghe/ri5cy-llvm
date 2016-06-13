@@ -144,7 +144,13 @@ RISCVTargetLowering::RISCVTargetLowering(const TargetMachine &tm,
         setOperationAction(ISD::SREM , VT, Legal);
         setOperationAction(ISD::UREM , VT, Legal);
       }else{
-        setOperationAction(ISD::MUL  , VT, Expand);
+
+        if (!Subtarget.is5CY() || VT==MVT::i64) {
+          //assert(false);
+          setOperationAction(ISD::MUL  , VT, Expand);
+        } else {
+          setOperationAction(ISD::MUL  , VT, Legal);  
+        }
         setOperationAction(ISD::MULHS, VT, Expand);
         setOperationAction(ISD::MULHU, VT, Expand);
         setOperationAction(ISD::SDIV , VT, Expand);
