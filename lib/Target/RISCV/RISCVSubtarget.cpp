@@ -21,7 +21,6 @@
 using namespace llvm;
 
 RISCVSubtarget &RISCVSubtarget::initializeSubtargetDependencies(StringRef CPU,
-                                                                StringRef FS) {
   std::string CPUName = CPU;
   if (CPUName.empty()){
     //TODO:generate cpu name?
@@ -36,7 +35,7 @@ RISCVSubtarget &RISCVSubtarget::initializeSubtargetDependencies(StringRef CPU,
 RISCVSubtarget::RISCVSubtarget(const Triple &TT, const std::string &CPU,
                                const std::string &FS, const TargetMachine &TM)
     : RISCVGenSubtargetInfo(TT, CPU, FS), RISCVArchVersion(RV32), HasM(false),
-      HasA(false), HasF(false), HasD(false), Is5CY(false), TargetTriple(TT),
+      HasA(false), HasF(false), HasD(false), IsR5CY(false), TargetTriple(TT),
       InstrInfo(initializeSubtargetDependencies(CPU,FS)), TLInfo(TM, *this), TSInfo(), FrameLowering() {}
 
 // Return true if GV binds locally under reloc model RM.

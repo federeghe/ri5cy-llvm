@@ -23,9 +23,11 @@
                  AssemblerPredicate<"FeatureD">; 
  def HasA   :    Predicate<"Subtarget.hasA()">,
                  AssemblerPredicate<"FeatureA">; 
- def Is5CY   :   Predicate<"Subtarget.is5CY()">,
-                 AssemblerPredicate<"Feature5CY">; 
+ def IsR5CY :   Predicate<"Subtarget.isR5CY()">,
+                 AssemblerPredicate<"FeatureR5CY">; 
 
+ def IsNOTR5CY :   Predicate<"!Subtarget.isR5CY()">;
+ 
 /*******************
 *RISCV Instructions
 ********************/
@@ -100,9 +102,9 @@ multiclass SetgePats<RegisterOperand RC, Instruction SLTOp, Instruction SLTuOp> 
 }
 
 defm : SeteqPats<GR32, SLTIU, XOR, SLTU, zero>;
-defm : SetlePats<GR32, SLT, SLTU>;
+defm : SetlePats<GR32, SLT, SLTU>, Requires<[IsNOTR5CY]>;
 defm : SetgtPats<GR32, SLT, SLTU>;
-defm : SetgePats<GR32, SLT, SLTU>;
+defm : SetgePats<GR32, SLT, SLTU>, Requires<[IsNOTR5CY]>;
 
 //Unconditional Jumps
 let isBranch = 1, isTerminator = 1, isBarrier = 1 in {
@@ -429,5 +431,5 @@ include "RISCVInstrInfoM.td"
 include "RISCVInstrInfoF.td"
 include "RISCVInstrInfoA.td"
 include "RISCVInstrInfoD.td"
-include "RISCVInstrInfo5CY.td"
+include "RISCVInstrInfoR5CY.td"
 
