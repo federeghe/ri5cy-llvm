@@ -298,3 +298,134 @@ class Pseudo<dag outs, dag ins, list<dag> pattern>
   let isPseudo = 1;
   let isCodeGenOnly = 1;
 }
+
+
+//P-Type
+class InstPC2<string mnemonic, bits<7> op, bits<10> funct10, 
+            RegisterOperand cls1, 
+            RegisterOperand cls2, list<dag> pattern>
+  : InstRISCV<4, (outs cls1:$dst), (ins cls2:$src2, cls2:$src1), 
+                mnemonic#"\t$dst, $src1, $src2", pattern> {
+  field bits<32> Inst;
+
+  bits<5> RD;
+  bits<5> RS1;
+  bits<5> RS2;
+
+  let Inst{31-27} = RD;
+  let Inst{26-22} = RS1;
+  let Inst{21-17} = RS2;
+  let Inst{16- 7} = funct10;
+  let Inst{6 - 0} = op;
+}
+
+// P-Type 1 Reg
+class InstP1<string mnemonic, bits<7> opcode, bits<7> funct7, bits<3> funct3,
+            SDPatternOperator operator1,
+            RegisterOperand cls1>
+  : InstRISCV<4, (outs cls1:$dst), (ins cls1:$src1), 
+                mnemonic#"\t$dst, $src1", 
+                [(set cls1:$dst, (operator1 imm:$src1))]> {
+  field bits<32> Inst;
+
+  bits<5> RD;
+  bits<5> RS1;
+
+  let Inst{31-25} = funct7;
+  let Inst{24-20} = 0;
+  let Inst{19-15} = RS1;
+  let Inst{14-12} = funct3;
+  let Inst{11-7} = RD;
+  let Inst{6 - 0} = opcode;
+}
+
+// P-Type 1 Reg (custom)
+class InstP1C<string mnemonic, bits<7> opcode, bits<7> funct7, bits<3> funct3,
+            list<dag> pattern,
+            RegisterOperand cls1>
+  : InstRISCV<4, (outs cls1:$dst), (ins cls1:$src1), 
+                mnemonic#"\t$dst, $src1", pattern> {
+  field bits<32> Inst;
+
+  bits<5> RD;
+  bits<5> RS1;
+
+  let Inst{31-25} = funct7;
+  let Inst{24-20} = 0;
+  let Inst{19-15} = RS1;
+  let Inst{14-12} = funct3;
+  let Inst{11-7} = RD;
+  let Inst{6 - 0} = opcode;
+}
+
+
+
+// P-Type 2Reg + 1 Imm
+class InstP2<string mnemonic, bits<7> opcode, bits<2> f2, bits<3> funct3,
+            SDPatternOperator operator1, SDPatternOperator operator2,
+            RegisterOperand cls1, RegisterOperand cls2, Immediate imm>
+  : InstRISCV<4, (outs cls1:$dst), (ins cls1:$src1, cls2:$src2, imm:$src3), 
+                mnemonic#"\t$dst, $src1, $src2, $src3", 
+                [(set cls1:$dst, (operator2 (operator1 cls2:$src1, cls2:$src2), imm:$src3))]> {
+  field bits<32> Inst;
+
+  bits<5> RD;
+  bits<5> RS1;
+  bits<5> RS2;
+  bits<5> IMM;
+
+  let Inst{31-30} = f2;
+  let Inst{29-25} = IMM;
+  let Inst{24-20} = RS2;
+  let Inst{19-15} = RS1;
+  let Inst{14-12} = funct3;
+  let Inst{11-7} = RD;
+  let Inst{6 - 0} = opcode;
+}
+
+// P-Type 2Reg (custom)
+
+class InstP2C<string mnemonic, bits<7> opcode, bits<7> funct7, bits<3> funct3,
+            list<dag> pattern,
+            RegisterOperand cls1, RegisterOperand cls2>
+  : InstRISCV<4, (outs cls1:$dst), (ins cls2:$src2, cls1:$src1), 
+                mnemonic#"\t$dst, $src1, $src2", pattern> {
+  field bits<32> Inst;
+
+  bits<5> RD;
+  bits<5> RS1;
+  bits<5> RS2;
+
+  let Inst{31-25} = funct7;
+  let Inst{24-20} = RS2;
+  let Inst{19-15} = RS1;
+  let Inst{14-12} = funct3;
+  let Inst{11-7} = RD;
+  let Inst{6 - 0} = opcode;
+}
+
+
+// P-Type 2Reg + 1 Imm (custom)
+
+class InstP2IC<string mnemonic, bits<7> opcode, bits<2> f2, bits<3> funct3,
+            list<dag> pattern,
+            RegisterOperand cls1, RegisterOperand cls2, Immediate imm>
+  : InstRISCV<4, (outs cls1:$dst), (ins cls1:$src1, cls2:$src2, imm:$src3), 
+                mnemonic#"\t$dst, $src1, $src2, $src3", pattern> {
+  field bits<32> Inst;
+
+  bits<5> RD;
+  bits<5> RS1;
+  bits<5> RS2;
+  bits<5> IMM;
+
+  let Inst{31-30} = f2;
+  let Inst{29-25} = IMM;
+  let Inst{24-20} = RS2;
+  let Inst{19-15} = RS1;
+  let Inst{14-12} = funct3;
+  let Inst{11-7} = RD;
+  let Inst{6 - 0} = opcode;
+}
+
+

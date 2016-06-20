@@ -291,3 +291,13 @@ def disp12imm64 : Operand<i64>;
 // 20-bit displacement operands.
 def disp20imm32 : Operand<i32>;
 def disp20imm64 : Operand<i64>;
+
+
+//===----------------------------------------------------------------------===//
+//RI5CY Extension
+//===----------------------------------------------------------------------===//
+def U5Imm  : ImmediateAsmOperand<"U5Imm">;
+def uimm5 : Immediate<i32, [{
+  return isUInt<5>(N->getZExtValue());
+}], NOOP_SDNodeXForm, "U5Imm">;
+

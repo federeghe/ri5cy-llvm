@@ -23,7 +23,7 @@ RISCVSubtarget::RISCVSubtarget(const std::string &TT,
                                    const std::string &FS)
   : RISCVGenSubtargetInfo(TT, CPU, FS), TargetTriple(TT),
     RISCVArchVersion(RV32), HasM(false), HasA(false), HasF(false), HasD(false), 
-    Is5CY(false) {
+    IsR5CY(false) {
   std::string CPUName = CPU;
   if (CPUName.empty()){
     //TODO:generate cpu name?

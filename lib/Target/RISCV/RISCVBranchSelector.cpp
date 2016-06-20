@@ -23,6 +23,7 @@
 #include "llvm/CodeGen/MachineFunctionPass.h"
 #include "llvm/Support/MathExtras.h"
 #include "llvm/Target/TargetMachine.h"
+
 using namespace llvm;
 
 STATISTIC(NumExpanded, "Number of branches expanded to long format");
@@ -61,6 +62,7 @@ FunctionPass *llvm::createRISCVBranchSelectionPass() {
 }
 
 bool RISCVBSel::runOnMachineFunction(MachineFunction &Fn) {
+
   const RISCVInstrInfo *TII =
                 static_cast<const RISCVInstrInfo*>(Fn.getTarget().getInstrInfo());
   // Give the blocks of the function a dense, in-order, numbering.

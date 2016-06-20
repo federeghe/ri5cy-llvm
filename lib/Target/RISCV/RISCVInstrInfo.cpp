@@ -84,6 +84,7 @@ bool RISCVInstrInfo::AnalyzeBranch(MachineBasicBlock &MBB,
                                      MachineBasicBlock *&FBB,
                                      SmallVectorImpl<MachineOperand> &Cond,
                                      bool AllowModify) const {
+
   // Most of the code and comments here are boilerplate.
 
   // Start from the bottom of the block and work up, examining the
