@@ -289,8 +289,14 @@ RISCVTargetLowering::RISCVTargetLowering(const TargetMachine &tm,
     setLoadExtAction(ISD::EXTLOAD,  VT, MVT::i1, Promote);
   }
   setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i1, Expand);
-  setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i8, Expand);
-  setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i16, Expand);
+
+  if(Subtarget.isR5CY()) {
+    setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i8, Legal);
+    setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i16, Legal);
+  } else {
+    setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i8, Expand);
+    setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i16, Expand);
+  }
   setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i32, Expand);
 
   // Handle the various types of symbolic address.
