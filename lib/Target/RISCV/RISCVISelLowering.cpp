@@ -27,6 +27,10 @@
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
 
+#warning REMOVE STDIO
+#include <stdio.h>
+#warning REMOVE STDIO
+
 using namespace llvm;
 
 static const MCPhysReg RV32IntRegs[8] = {
@@ -178,14 +182,28 @@ RISCVTargetLowering::RISCVTargetLowering(const TargetMachine &tm,
       setOperationAction(ISD::ATOMIC_LOAD,  VT, Expand);
       setOperationAction(ISD::ATOMIC_STORE, VT, Expand);
 
-      // No special instructions for these.
-      setOperationAction(ISD::CTPOP,           VT, Expand);
+
+      if(!Subtarget.isR5CY()) {
+        setOperationAction(ISD::CTPOP,           VT, Expand);
+        setOperationAction(ISD::CTLZ,            VT, Expand);
+      }
+
       setOperationAction(ISD::CTTZ,            VT, Expand);
-      setOperationAction(ISD::CTLZ,            VT, Expand);
       setOperationAction(ISD::CTTZ_ZERO_UNDEF, VT, Expand);
       setOperationAction(ISD::CTLZ_ZERO_UNDEF, VT, Expand);
 
     }
+  }
+
+  if(Subtarget.isR5CY()) {
+      setOperationAction(ISD::CTLZ,  MVT::i8, Promote);
+      setOperationAction(ISD::CTPOP, MVT::i8, Promote);
+      setOperationAction(ISD::CTLZ,  MVT::i16, Promote);
+      setOperationAction(ISD::CTPOP, MVT::i16, Promote);
+      setOperationAction(ISD::CTLZ,  MVT::i32, Legal);
+      setOperationAction(ISD::CTPOP, MVT::i32, Legal);
+      setOperationAction(ISD::CTLZ,  MVT::i64, Expand);
+      setOperationAction(ISD::CTPOP, MVT::i64, Expand);
   }
 
   //to have the best chance and doing something good with fences custom lower them

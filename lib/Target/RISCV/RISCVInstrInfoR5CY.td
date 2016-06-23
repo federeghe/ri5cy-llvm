@@ -12,6 +12,21 @@ def MUL5CY   : InstR<"mul"  , 0b0110011, 0b0000001000, mul   , GR32, GR32>, Requ
 
 //
 //
+//         BIT MANIPULATION
+//
+//
+
+def PCNT     : InstP1C<"p.cnt", 0b0110011,0b0001000,0b011,
+               [(set GR32:$dst, (ctpop GR32:$src1))],GR32>, Requires<[IsR5CY]>;
+
+def PCLB1    : InstP1C<"p.clb", 0b0110011,0b0001000,0b010,
+               [(set GR32:$dst, (ctlz GR32:$src1))],GR32>, Requires<[IsR5CY]>;
+
+def PCLB2    : InstP1C<"p.clb", 0b0110011,0b0001000,0b010,
+               [(set GR32:$dst, (not (ctlz GR32:$src1)))],GR32>, Requires<[IsR5CY]>;
+
+//
+//
 //          GENERAL ALU OPERATION (1)
 //
 //
@@ -98,7 +113,7 @@ def PADDRN    : InstP2IC<"p.addRN",
                             (add GR32:$src1, GR32:$src2), 
                             (srl (i32 1), (sub uimm5:$src3, (i32 1))) 
                           ),
-                          imm:$src3
+                          uimm5:$src3
                         )
                       ) ],
                      GR32,
@@ -116,7 +131,7 @@ def PADDURN    : InstP2IC<"p.adduRN",
                             (add GR32:$src1, GR32:$src2), 
                             (srl (i32 1), (sub uimm5:$src3, (i32 1))) 
                           ),
-                          imm:$src3
+                          uimm5:$src3
                         )
                       ) ],
                      GR32,
@@ -157,7 +172,7 @@ def PSUBRN    : InstP2IC<"p.subRN",
                             (sub GR32:$src1, GR32:$src2), 
                             (srl (i32 1), (sub uimm5:$src3, (i32 1))) 
                           ),
-                          imm:$src3
+                          uimm5:$src3
                         )
                       ) ],
                      GR32,
@@ -175,7 +190,7 @@ def PSUBURN    : InstP2IC<"p.subuRN",
                             (sub GR32:$src1, GR32:$src2), 
                             (srl (i32 1), (sub uimm5:$src3, (i32 1))) 
                           ),
-                          imm:$src3
+                          uimm5:$src3
                         )
                       ) ],
                      GR32,
