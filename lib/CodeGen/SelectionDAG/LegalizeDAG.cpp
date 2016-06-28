@@ -11,6 +11,11 @@
 //
 //===----------------------------------------------------------------------===//
 
+#warning REMOVE ME
+#include <stdio.h>
+
+#warning REMOVE ME
+
 #include "llvm/CodeGen/SelectionDAG.h"
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/SmallVector.h"
@@ -1314,12 +1319,16 @@ void SelectionDAGLegalize::LegalizeOp(SDNode *Node) {
     }
     switch (Action) {
     case TargetLowering::Legal:
+      //printf("LegalizeDAG.cpp: %s - Legal!\n", Node->getOperationName().c_str());
       return;
     case TargetLowering::Custom: {
       // FIXME: The handling for custom lowering with multiple results is
       // a complete mess.
       SDValue Res = TLI.LowerOperation(SDValue(Node, 0), DAG);
+      //printf("LegalizeDAG.cpp: %s - Custom!\n", Node->getOperationName().c_str());
+
       if (Res.getNode()) {
+        //printf("LegalizeDAG.cpp: Custom OK!\n");
         SmallVector<SDValue, 8> ResultVals;
         for (unsigned i = 0, e = Node->getNumValues(); i != e; ++i) {
           if (e == 1)
@@ -1338,9 +1347,12 @@ void SelectionDAGLegalize::LegalizeOp(SDNode *Node) {
     }
       // FALL THROUGH
     case TargetLowering::Expand:
+      //printf("LegalizeDAG.cpp: %s - Expanding!\n", Node->getOperationName().c_str());
+
       ExpandNode(Node);
       return;
     case TargetLowering::Promote:
+      //printf("LegalizeDAG.cpp: %s - Promoting!\n", Node->getOperationName().c_str());
       PromoteNode(Node);
       return;
     }

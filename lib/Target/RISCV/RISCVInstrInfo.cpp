@@ -16,6 +16,9 @@
 #include "RISCVTargetMachine.h"
 #include "llvm/CodeGen/MachineRegisterInfo.h"
 
+#include "llvm/CodeGen/MachineFrameInfo.h"
+#include "llvm/CodeGen/MachineFunctionPass.h"
+
 #define GET_INSTRINFO_CTOR
 #define GET_INSTRMAP_INFO
 #include "RISCVGenInstrInfo.inc"
@@ -669,3 +672,4 @@ void RISCVInstrInfo::loadImmediate(MachineBasicBlock &MBB,
   BuildMI(MBB, MBBI, DL, get(RISCV::LI), *Reg).addImm(Value);
   }
 }
+

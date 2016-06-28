@@ -106,6 +106,7 @@ RISCVTargetLowering::RISCVTargetLowering(RISCVTargetMachine &tm)
       // Lower SELECT_CC and BR_CC into separate comparisons and branches.
       setOperationAction(ISD::SELECT_CC, VT, Expand);
       setOperationAction(ISD::BR_CC,     VT, Expand);
+      //setOperationAction(ISD::ADD, VT, Custom);
 
     }
   }
@@ -179,8 +180,11 @@ RISCVTargetLowering::RISCVTargetLowering(RISCVTargetMachine &tm)
       setOperationAction(ISD::SRA_PARTS, VT, Expand);
       //RISCV doesn't support rotl
       setOperationAction(ISD::ROTL, VT, Expand);
-      setOperationAction(ISD::ROTR, VT, Expand);
-
+      if (Subtarget.isR5CY()) {
+          setOperationAction(ISD::ROTR, VT, Legal);
+      } else {
+          setOperationAction(ISD::ROTR, VT, Expand);
+      }
       // Expand ATOMIC_LOAD and ATOMIC_STORE using ATOMIC_CMP_SWAP.
       // FIXME: probably much too conservative.
       setOperationAction(ISD::ATOMIC_LOAD,  VT, Expand);
@@ -431,6 +435,17 @@ RISCVTargetLowering::RISCVTargetLowering(RISCVTargetMachine &tm)
   setOperationAction(ISD::VAARG  , MVT::Other, Custom);
   setOperationAction(ISD::VACOPY , MVT::Other, Expand);
   setOperationAction(ISD::VAEND  , MVT::Other, Expand);
+
+
+  if (Subtarget.isR5CY()) {
+	  for (unsigned I = MVT::FIRST_FP_VALUETYPE;
+		   I <= MVT::LAST_FP_VALUETYPE;
+		   ++I) {
+		MVT VT = MVT::SimpleValueType(I);
+        //setOperationAction(ISD::SELECT, VT, Custom);
+      }
+  //    setTargetDAGCombine(ISD::SELECT);
+  }
 
 
   // Compute derived properties from the register classes
@@ -1470,16 +1485,42 @@ RISCVTargetLowering::LowerReturn(SDValue Chain,
 }
 
 SDValue RISCVTargetLowering::
+lowerADD(SDValue Op, SelectionDAG &DAG) const
+{
+// TODO REMOVE ME
+
+
+//  printf("ADD\n");
+
+  DebugLoc DL = Op.getDebugLoc();
+  EVT VT = Op.getValueType();
+  SDValue OP1 = Op.getOperand(0);
+  SDValue OP2 = Op.getOperand(1);
+
+//    if ()
+
+	return SDValue();
+}
+
+SDValue RISCVTargetLowering::
 lowerSELECT_CC(SDValue Op, SelectionDAG &DAG) const
 {
-  DebugLoc DL = Op.getDebugLoc();
-  EVT Ty = Op.getOperand(0).getValueType();
-  SDValue Cond = DAG.getNode(ISD::SETCC, DL, getSetCCResultType(Ty),
-                             Op.getOperand(0), Op.getOperand(1),
-                             Op.getOperand(4));
+  printf("lowerSELECT_CC\n");
 
-  return DAG.getNode(ISD::SELECT, DL, Op.getValueType(), Cond, Op.getOperand(2),
-                     Op.getOperand(3));
+  return Op;
+
+
+  DebugLoc DL = Op.getDebugLoc();
+  EVT VT = Op.getValueType();
+  SDValue LHS = Op.getOperand(0);
+  SDValue RHS = Op.getOperand(1);
+  SDValue TOP = Op.getOperand(2);
+  SDValue FOP = Op.getOperand(3);
+  SDValue CC = Op.getOperand(4);
+
+
+  SDValue Cond = DAG.getNode(ISD::SETCC, DL, MVT::i1, LHS, RHS, CC);
+  return DAG.getNode(RISCVISD::SELECT_CC, DL, VT, Cond, TOP, FOP);
 }
 
 SDValue RISCVTargetLowering::lowerRETURNADDR(SDValue Op, SelectionDAG &DAG) const {
@@ -1728,6 +1769,9 @@ SDValue RISCVTargetLowering::LowerOperation(SDValue Op,
     return lowerSTACKRESTORE(Op, DAG);
   case ISD::FRAMEADDR:
     return lowerFRAMEADDR(Op, DAG);
+
+  case ISD::ADD:
+    return lowerADD(Op, DAG);
   default:
     llvm_unreachable("Unexpected node to lower");
   }
@@ -1743,7 +1787,11 @@ const char *RISCVTargetLowering::getTargetNodeName(unsigned Opcode) const {
     OPCODE(Lo);
     OPCODE(FENCE);
     OPCODE(SELECT_CC);
-  }
+    OPCODE(SMIN);
+    OPCODE(UMIN);
+    OPCODE(SMAX);
+    OPCODE(UMAX);  
+}
   return NULL;
 #undef OPCODE
 }
@@ -1757,6 +1805,9 @@ emitSelectCC(MachineInstr *MI, MachineBasicBlock *BB) const {
 
   const TargetInstrInfo *TII = getTargetMachine().getInstrInfo();
   DebugLoc DL = MI->getDebugLoc();
+
+// TODO REMOVE ME
+//  printf("Emitting SELECT_CC!\n");
 
   // To "insert" a SELECT_CC instruction, we actually have to insert the
   // diamond control-flow pattern.  The incoming instruction knows the
@@ -1914,3 +1965,24 @@ RISCVTargetLowering::writeVarArgRegs(std::vector<SDValue> &OutChains,
     OutChains.push_back(Store);
   }
 }
+
+
+SDValue RISCVTargetLowering::PerformDAGCombine(SDNode *N, DAGCombinerInfo &DCI) const {
+
+	SelectionDAG &DAG = DCI.DAG;
+
+    switch (N->getOpcode()) {
+        default: break;
+
+    }
+//            printf("PerformDAGCombine(2) %i\n", N->getOpcode());
+	//return TargetLowering::PerformDAGCombine(N, DCI);
+
+    return SDValue();
+}
+
+
+
+
+
+

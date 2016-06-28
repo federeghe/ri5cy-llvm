@@ -88,7 +88,14 @@ namespace RISCVISD {
     ATOMIC_LOADW_MIN,
     ATOMIC_LOADW_MAX,
     ATOMIC_LOADW_UMIN,
-    ATOMIC_LOADW_UMAX
+    ATOMIC_LOADW_UMAX,
+
+
+    // RI5CY extensions
+    SMIN,
+    SMAX,
+    UMIN,
+    UMAX
   };
 }
 
@@ -98,6 +105,8 @@ class RISCVTargetMachine;
 class RISCVTargetLowering : public TargetLowering {
 public:
   explicit RISCVTargetLowering(RISCVTargetMachine &TM);
+
+  ~RISCVTargetLowering() {}
 
   // Override TargetLowering.
   virtual MVT getScalarShiftAmountTy(EVT LHSTy) const LLVM_OVERRIDE {
@@ -152,6 +161,10 @@ public:
                 const SmallVectorImpl<ISD::OutputArg> &Outs,
                 const SmallVectorImpl<SDValue> &OutVals,
                 DebugLoc DL, SelectionDAG &DAG) const LLVM_OVERRIDE;
+
+
+    virtual SDValue PerformDAGCombine(SDNode *N, DAGCombinerInfo &DCI) const;
+
 
     struct LTStr {
       bool operator()(const char *S1, const char *S2) const {
@@ -268,6 +281,7 @@ public:
 private:
 
   // Implement LowerOperation for individual opcodes.
+  SDValue lowerADD(SDValue Op, SelectionDAG &DAG) const;
   SDValue lowerSELECT_CC(SDValue Op, SelectionDAG &DAG) const;
   SDValue lowerRETURNADDR(SDValue Op, SelectionDAG &DAG) const;
   SDValue lowerGlobalAddress(SDValue Op,
