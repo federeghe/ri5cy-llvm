@@ -16,6 +16,7 @@ add_llvm_target(RISCVCodeGen
   RISCVConstantPoolValue.cpp
   RISCVFrameLowering.cpp
   RISCVInstrInfo.cpp
+  RISCVInstrInfoR5CY.cpp
   RISCVISelDAGToDAG.cpp
   RISCVISelLowering.cpp
   RISCVMachineFunctionInfo.cpp

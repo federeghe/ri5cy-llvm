@@ -628,3 +628,4 @@ void RISCVInstrInfo::loadImmediate(MachineBasicBlock &MBB,
   BuildMI(MBB, MBBI, DL, get(RISCV::LI), *Reg).addImm(Value);
   }
 }
+

@@ -15,6 +15,21 @@ def MUL5CY   : InstR<"mul"  , 0b0110011, 0b0000001000, mul   , GR32, GR32>, Requ
 //         BIT MANIPULATION
 //
 //
+ 
+def PBCLR    : InstP1I2C<"p.bclr",0b0110011,0b11,0b011,
+                [(set GR32:$dst, (and GR32:$src1, 
+                     (shl ( not
+                              ( sub 
+                                  ( shl (i32 1), 
+                                  uimm32:$imm3),
+                              (i32 1) 
+                             )),
+                          uimm32:$imm2 ) )) ]
+              ,GR32,uimm32,uimm32>, Requires<[IsR5CY]>;
+
+
+def PFL1    : InstP1C<"p.fl1", 0b0110011,0b0001000,0b000,
+               [(set GR32:$dst, (xor  (ctlz GR32:$src1), (i32 31) ))],GR32>, Requires<[IsR5CY]>;
 
 def PCNT     : InstP1C<"p.cnt", 0b0110011,0b0001000,0b011,
                [(set GR32:$dst, (ctpop GR32:$src1))],GR32>, Requires<[IsR5CY]>;
@@ -24,6 +39,11 @@ def PCLB1    : InstP1C<"p.clb", 0b0110011,0b0001000,0b010,
 
 def PCLB2    : InstP1C<"p.clb", 0b0110011,0b0001000,0b010,
                [(set GR32:$dst, (not (ctlz GR32:$src1)))],GR32>, Requires<[IsR5CY]>;
+
+def PROR     : InstP2C<"p.ror", 0b0110011,0b0000100,0b101,
+               [(set GR32:$dst, (rotr GR32:$src1, GR32:$src2))],GR32,GR32>,
+               Requires<[IsR5CY]>;
+
 
 //
 //
@@ -35,16 +55,36 @@ def PABS     : InstP1C<"p.abs",
                      0b0110011,
                      0b0000010,
                      0b000,
-                     [(set (i32 GR32:$dst),
-                        (i32(select (
-                          i32(setlt GR32:$src1, (i32 0)) 
-                        ),
-                        (i32(sub (i32 0), GR32:$src1)),
-                        (i32 GR32:$src1)
-                        ))
-                      )],
+                     [],
                      GR32
 					>, Requires<[IsR5CY]>;
+
+def : Pat<(select (i32 (setlt GR32:$src1, (i32 0))), (sub (i32 0), GR32:$src1), GR32:$src1),
+        (PABS GR32:$src1)>, Requires<[IsR5CY]>;
+
+def : Pat<(select (i32 (setgt GR32:$src1, (i32 0))), GR32:$src1, (sub (i32 0), GR32:$src1)),
+        (PABS GR32:$src1)>, Requires<[IsR5CY]>;
+
+def : Pat<(select (i32 (setle GR32:$src1, (i32 0))), (sub (i32 0), GR32:$src1), GR32:$src1),
+        (PABS GR32:$src1)>, Requires<[IsR5CY]>;
+
+def : Pat<(select (i32 (setge GR32:$src1, (i32 0))), GR32:$src1, (sub (i32 0), GR32:$src1)),
+        (PABS GR32:$src1)>, Requires<[IsR5CY]>;
+
+
+def : Pat<(xor 
+              ( add 
+                     GR32:$src1, 
+                      (sra 
+                             GR32:$src1, 
+                             (i32 31)
+                          )
+                    
+               ), 
+               (sra 
+                     GR32:$src1, 
+                     (i32 31)
+              )),(PABS GR32:$src1)>, Requires<[IsR5CY]>;
 
 def PSLET   : InstP2C<"p.slet", 0b0110011, 0b0000010, 0b010,
                      [(set GR32:$dst, (setle GR32:$src1,  GR32:$src2))],
@@ -63,6 +103,56 @@ multiclass SetgeDedicatePats<RegisterOperand RC, Instruction PSLETOp, Instructio
 
 defm : SetgeDedicatePats<GR32, PSLET, PSLETU>, Requires<[IsR5CY]>;
 
+
+def PMIN      : InstP2C<"p.min",0b0110011,0b0000010,0b100,
+                [],GR32, GR32>, Requires<[IsR5CY]>;
+
+def : Pat<(select (i32 (setle GR32:$lhs, GR32:$rhs)), GR32:$lhs, GR32:$rhs),
+        (PMIN GR32:$lhs, GR32:$rhs)>, Requires<[IsR5CY]>;
+def : Pat<(select (i32 (setge GR32:$rhs, GR32:$lhs)), GR32:$lhs, GR32:$rhs),
+        (PMIN GR32:$lhs, GR32:$rhs)>, Requires<[IsR5CY]>;
+def : Pat<(select (i32 (setlt GR32:$lhs, GR32:$rhs)), GR32:$lhs, GR32:$rhs),
+        (PMIN GR32:$lhs, GR32:$rhs)>, Requires<[IsR5CY]>;
+def : Pat<(select (i32 (setgt GR32:$rhs, GR32:$lhs)), GR32:$lhs, GR32:$rhs),
+        (PMIN GR32:$lhs, GR32:$rhs)>, Requires<[IsR5CY]>;
+
+def PMINU     : InstP2C<"p.minu",0b0110011,0b0000010,0b101,
+                [],GR32, GR32>, Requires<[IsR5CY]>;
+
+def : Pat<(select (i32 (setule GR32:$lhs, GR32:$rhs)), GR32:$lhs, GR32:$rhs),
+        (PMINU GR32:$lhs, GR32:$rhs)>, Requires<[IsR5CY]>;
+def : Pat<(select (i32 (setuge GR32:$rhs, GR32:$lhs)), GR32:$lhs, GR32:$rhs),
+        (PMINU GR32:$lhs, GR32:$rhs)>, Requires<[IsR5CY]>;
+def : Pat<(select (i32 (setult GR32:$lhs, GR32:$rhs)), GR32:$lhs, GR32:$rhs),
+        (PMINU GR32:$lhs, GR32:$rhs)>, Requires<[IsR5CY]>;
+def : Pat<(select (i32 (setugt GR32:$rhs, GR32:$lhs)), GR32:$lhs, GR32:$rhs),
+        (PMINU GR32:$lhs, GR32:$rhs)>, Requires<[IsR5CY]>;
+
+def PMAX      : InstP2C<"p.max",0b0110011,0b0000010,0b110,
+                [],GR32, GR32>, Requires<[IsR5CY]>;
+
+def : Pat<(select (i32 (setge GR32:$lhs, GR32:$rhs)), GR32:$lhs, GR32:$rhs),
+        (PMAX GR32:$lhs, GR32:$rhs)>, Requires<[IsR5CY]>;
+def : Pat<(select (i32 (setle GR32:$rhs, GR32:$lhs)), GR32:$lhs, GR32:$rhs),
+        (PMAX GR32:$lhs, GR32:$rhs)>, Requires<[IsR5CY]>;
+def : Pat<(select (i32 (setgt GR32:$lhs, GR32:$rhs)), GR32:$lhs, GR32:$rhs),
+        (PMAX GR32:$lhs, GR32:$rhs)>, Requires<[IsR5CY]>;
+def : Pat<(select (i32 (setlt GR32:$rhs, GR32:$lhs)), GR32:$lhs, GR32:$rhs),
+        (PMAX GR32:$lhs, GR32:$rhs)>, Requires<[IsR5CY]>;
+
+def PMAXU     : InstP2C<"p.maxu",0b0110011,0b0000010,0b111,
+                [],GR32, GR32>, Requires<[IsR5CY]>;
+
+def : Pat<(select (i32 (setuge GR32:$lhs, GR32:$rhs)), GR32:$lhs, GR32:$rhs),
+        (PMAXU GR32:$lhs, GR32:$rhs)>, Requires<[IsR5CY]>;
+def : Pat<(select (i32 (setule GR32:$rhs, GR32:$lhs)), GR32:$lhs, GR32:$rhs),
+        (PMAXU GR32:$lhs, GR32:$rhs)>, Requires<[IsR5CY]>;
+def : Pat<(select (i32 (setugt GR32:$lhs, GR32:$rhs)), GR32:$lhs, GR32:$rhs),
+        (PMAXU GR32:$lhs, GR32:$rhs)>, Requires<[IsR5CY]>;
+def : Pat<(select (i32 (setult GR32:$rhs, GR32:$lhs)), GR32:$lhs, GR32:$rhs),
+        (PMAXU GR32:$lhs, GR32:$rhs)>, Requires<[IsR5CY]>;
+
+
 def PEXTHS    : InstP1C<"p.exths",0b0110011,0b0001000,0b100,
                 [(set GR32:$dst,(sext16 GR32:$src1))],GR32>, Requires<[IsR5CY]>;
 
@@ -76,6 +166,7 @@ def PEXTBS    : InstP1C<"p.extbs",0b0110011,0b0001000,0b110,
                 [(set GR32:$dst,(sext8  GR32:$src1))],GR32>, Requires<[IsR5CY]>;
 
 
+ 
 //
 //
 //          GENERAL ALU OPERATION (2)

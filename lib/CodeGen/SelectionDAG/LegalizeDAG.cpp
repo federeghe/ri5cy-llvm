@@ -1395,11 +1395,14 @@ void SelectionDAGLegalize::LegalizeOp(SDNode *Node) {
     }
     switch (Action) {
     case TargetLowering::Legal:
+      //printf("LegalizeDAG.cpp: %s - Legal!\n", Node->getOperationName().c_str());
       return;
     case TargetLowering::Custom: {
       // FIXME: The handling for custom lowering with multiple results is
       // a complete mess.
       SDValue Res = TLI.LowerOperation(SDValue(Node, 0), DAG);
+      //printf("LegalizeDAG.cpp: %s - Custom!\n", Node->getOperationName().c_str());
+
       if (Res.getNode()) {
         if (!(Res.getNode() != Node || Res.getResNo() != 0))
           return;
@@ -1426,6 +1429,7 @@ void SelectionDAGLegalize::LegalizeOp(SDNode *Node) {
       ConvertNodeToLibcall(Node);
       return;
     case TargetLowering::Promote:
+      //printf("LegalizeDAG.cpp: %s - Promoting!\n", Node->getOperationName().c_str());
       PromoteNode(Node);
       return;
     }

@@ -199,6 +199,7 @@ let isBranch = 1, isTerminator = 1, isBarrier = 1 in {
 def : Pat<(brcond GR32Bit:$cond, bb:$target),
           (BNE bb:$target, GR32Bit:$cond, zero)>;  
 def : Pat<(i32 0), (i32 zero)>;
+
 //Conditional moves
 // SELECT_CC_* - Used to implement the SELECT_CC DAG operation.  Expanded after
 // instruction selection into a branch sequence.
@@ -213,6 +214,10 @@ def : Pat<(select (i32 (setne GR32:$lhs, 0)), GR32:$T, GR32:$F),
 
 def : Pat<(select (i32 (seteq GR32:$lhs, 0)), GR32:$T, GR32:$F),
         (SELECT_CC GR32:$lhs, GR32:$F, GR32:$T)>;
+
+// TODO REMOVE ME
+//def : Pat<(selectcc GR32:$lhs, GR32:$rhs, GR32:$T, GR32:$F, SETEQ),
+//        (SELECT_CC ( seteq GR32:$lhs, GR32:$rhs ) , GR32:$F, GR32:$T)>;
 
 //Load/Store Instructions
 let mayLoad = 1 in {
