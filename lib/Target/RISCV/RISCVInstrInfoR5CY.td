@@ -16,18 +16,15 @@ def MUL5CY   : InstR<"mul"  , 0b0110011, 0b0000001000, mul   , GR32, GR32>, Requ
 //
 //
  
-def PBCLR    : InstP1I2C<"p.bclr",0b0110011,0b11,0b011,
-                [(set GR32:$dst, (and GR32:$src1, 
-                     (shl ( not
-                              ( sub 
-                                  ( shl (i32 1), 
-                                  uimm32:$imm3),
-                              (i32 1) 
-                             )),
+/*def PBCLR    : Pseudo<(outs GR32:$dst),(ins GR32:$src, imm32:$imm),
+
+
+"p.bclr",0b0110011,0b11,0b011,
+                [(set GR32:$dst, (and GR32:$src1, imm32:$imm1
                           uimm32:$imm2 ) )) ]
               ,GR32,uimm32,uimm32>, Requires<[IsR5CY]>;
 
-
+*/
 def PFL1    : InstP1C<"p.fl1", 0b0110011,0b0001000,0b000,
                [(set GR32:$dst, (xor  (ctlz GR32:$src1), (i32 31) ))],GR32>, Requires<[IsR5CY]>;
 

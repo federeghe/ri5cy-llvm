@@ -88,6 +88,9 @@ public:
 } // end anonymous namespace
 
 bool RISCVPassConfig::addInstSelector() {
+  if (getRISCVTargetMachine().getSubtargetImpl()->isR5CY()) {
+    addPass(createRISCVRI5CYDagToDagPass());
+  }
   addPass(createRISCVISelDag(getRISCVTargetMachine(), getOptLevel()));
   return false;
 }
