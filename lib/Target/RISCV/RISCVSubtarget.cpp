@@ -21,6 +21,7 @@
 using namespace llvm;
 
 RISCVSubtarget &RISCVSubtarget::initializeSubtargetDependencies(StringRef CPU,
+   StringRef FS) {
   std::string CPUName = CPU;
   if (CPUName.empty()){
     //TODO:generate cpu name?

@@ -1220,10 +1220,17 @@ lowerADD(SDValue Op, SelectionDAG &DAG) const
 SDValue RISCVTargetLowering::
 lowerSELECT_CC(SDValue Op, SelectionDAG &DAG) const
 {
+
   SDLoc DL(Op);
-  EVT Ty = Op.getOperand(0).getValueType();
+  EVT VT = Op.getOperand(0).getValueType();
+  SDValue LHS = Op.getOperand(0);
+  SDValue RHS = Op.getOperand(1);
+  SDValue TOP = Op.getOperand(2);
+  SDValue FOP = Op.getOperand(3);
+  SDValue CC = Op.getOperand(4);
+
   SDValue Cond = DAG.getNode(ISD::SETCC, DL,
-                             getSetCCResultType(DAG.getDataLayout(),*DAG.getContext(), Ty),
+                             getSetCCResultType(DAG.getDataLayout(),*DAG.getContext(), VT),
                              Op.getOperand(0), Op.getOperand(1),
                              Op.getOperand(4));
   printf("lowerSELECT_CC\n");
@@ -1231,16 +1238,9 @@ lowerSELECT_CC(SDValue Op, SelectionDAG &DAG) const
   return Op;
 
 
-  DebugLoc DL = Op.getDebugLoc();
-  EVT VT = Op.getValueType();
-  SDValue LHS = Op.getOperand(0);
-  SDValue RHS = Op.getOperand(1);
-  SDValue TOP = Op.getOperand(2);
-  SDValue FOP = Op.getOperand(3);
-  SDValue CC = Op.getOperand(4);
 
-*/
-  SDValue Cond = DAG.getNode(ISD::SETCC, DL, MVT::i1, LHS, RHS, CC);
+
+  SDValue Cond = DAG.getNode(ISD::SETCC, DL, MVT::i1, LHS, RHS, CC);*/
   return DAG.getNode(RISCVISD::SELECT_CC, DL, VT, Cond, TOP, FOP);
 }
 
@@ -1677,3 +1677,21 @@ EmitInstrWithCustomInserter(MachineInstr *MI, MachineBasicBlock *MBB) const {
     llvm_unreachable("Unexpected instr type to insert");
   }
 }
+
+
+SDValue RISCVTargetLowering::PerformDAGCombine(SDNode *N, DAGCombinerInfo &DCI) const {
+
+	SelectionDAG &DAG = DCI.DAG;
+
+    switch (N->getOpcode()) {
+        default: break;
+
+    }
+//            printf("PerformDAGCombine(2) %i\n", N->getOpcode());
+	//return TargetLowering::PerformDAGCombine(N, DCI);
+
+    return SDValue();
+}
+
+
+

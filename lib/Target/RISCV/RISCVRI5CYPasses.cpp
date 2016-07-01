@@ -32,10 +32,10 @@ bool RISCVRI5CYDagToDag::runOnMachineFunction(MachineFunction &MF) {
     // Check if we are RI5CY()
     this->TM = static_cast<const RISCVTargetMachine*>(&MF.getTarget());
     assert(TM->getSubtargetImpl()->isR5CY());
-    TargetTransformInfo TTI = getAnalysisIfAvailable<TargetTransformInfo>();
+
 
     dag = new SelectionDAG(*TM, TM->getOptLevel());
-    dag->init(MF, &TTI);
+    dag->init(MF);
 
     printf("runOnMachineFunction(%s)\n", MF.getName().str().c_str());
 
