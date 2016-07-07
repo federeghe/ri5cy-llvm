@@ -279,3 +279,12 @@ def uimm5 : Immediate<i32, [{
   return isUInt<5>(N->getZExtValue());
 }], NOOP_SDNodeXForm, "U5Imm">;
 
+def Uimm32contig0  : ImmediateAsmOperand<"Uimm32contig0">;
+def imm32contig0 : Immediate<i32, [{
+  if(isUInt<12>(N->getSExtValue()))
+    return false;
+  if(isInt<32>(N->getSExtValue())) {
+      return RI5CY_bitIntervalExtraction(N->getSExtValue());
+  }
+}], NOOP_SDNodeXForm, "Uimm32contig0">;
+

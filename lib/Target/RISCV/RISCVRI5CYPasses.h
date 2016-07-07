@@ -1,5 +1,7 @@
 #define DEBUG_TYPE "riscv-ri5cy-passes"
 
+#include <map>
+
 #include "RISCV.h"
 #include "RISCVInstrBuilder.h"
 #include "RISCVInstrInfo.h"
@@ -9,42 +11,76 @@
 #include "llvm/Target/TargetMachine.h"
 #include "RISCVTargetMachine.h"
 
+#define RISCV_RI5CY_MNODE_ID 9999
+
 using namespace llvm;
 
+extern bool RI5CY_bitIntervalExtraction( int n, unsigned int* l_pos=NULL, unsigned int* r_pos=NULL);
 
 namespace llvm {
-  void initializeRISCVRI5CYDagToDagPass(PassRegistry&);
+  void initializeRISCVRI5CYIRPass(PassRegistry&);
 }
 
 
 namespace {
-  struct RISCVRI5CYDagToDag : public MachineFunctionPass {
-    static char ID;
 
-    RISCVRI5CYDagToDag() : MachineFunctionPass(ID) {
-       initializeRISCVRI5CYDagToDagPass(*PassRegistry::getPassRegistry());
-    }
 
-    virtual ~RISCVRI5CYDagToDag() {
-        if (dag != NULL) {
-            delete dag;
-        } 
-    }
+class RISCVRI5CYIR : public FunctionPass {
 
-    /// BlockSizes - The sizes of the basic blocks in the function.
-    std::vector<unsigned> BlockSizes;
+public:
+  static char ID;
 
-    virtual bool runOnMachineFunction(MachineFunction &MF);
+  RISCVRI5CYIR() : FunctionPass(ID) {
+     initializeRISCVRI5CYIRPass(*PassRegistry::getPassRegistry());
+  }
 
-    virtual const char *getPassName() const {
-      return "RISCV RI5CY Dag-To-Dag pass";
-    }
+  virtual ~RISCVRI5CYIR() {
+      if (dag != NULL) {
+          delete dag;
+      } 
+  }
 
-    const RISCVTargetMachine *TM; 
-    SelectionDAG * dag = NULL;
-    bool transform4BitManipulation(MachineFunction &MF);
-  };
+  /// BlockSizes - The sizes of the basic blocks in the function.
+  std::vector<unsigned> BlockSizes;
 
-  char RISCVRI5CYDagToDag::ID = 0;
+  virtual bool runOnFunction(Function &F);
+
+  virtual const char *getPassName() const {
+    return "RISCV RI5CY IR pass";
+  }
+
+  const RISCVTargetMachine *TM; 
+  SelectionDAG * dag = NULL;
+  bool transformBitManipulation(Function &F);
+
+  private:
+
+};
+
+char RISCVRI5CYIR::ID = 0;
+
+
+// Metadata class
+class RISCVMetadata : public Metadata {
+
+
+public:
+    static const unsigned Metadata_ID=999;
+
+    typedef enum RISCV_metadata_type_e { NONE, SPECIALIZED } RISCV_metadata_type_t;
+
+    RISCVMetadata(RISCV_metadata_type_t t) :  Metadata(Metadata_ID,Uniqued), type(t) { }
+
+    void addImmediate(int pos, int value) { immediates[pos]=value; }
+    int getImmediate(int pos) { return immediates[pos]; }
+
+private:
+    RISCV_metadata_type_t type;
+
+    std::map<int,int> immediates;
+
+};
+
+
 
 }

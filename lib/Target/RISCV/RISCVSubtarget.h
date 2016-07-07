@@ -48,6 +48,8 @@ protected:
 
   bool UseSoftFloat;
 
+  bool IsR5CY;
+
 private:
   Triple TargetTriple;
   RISCVInstrInfo InstrInfo;
@@ -56,8 +58,6 @@ private:
   RISCVFrameLowering FrameLowering;
 
   RISCVSubtarget &initializeSubtargetDependencies(StringRef CPU, StringRef FS);
-
-  bool IsR5CY;
 
 public:
   RISCVSubtarget(const Triple &TT, const std::string &CPU,

@@ -26,10 +26,10 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/MC/MCInst.h"
 
-#warning REMOVE STDIO
-#include <stdio.h>
-#warning REMOVE STDIO
+#include "RISCVRI5CYPasses.h"
+
 
 using namespace llvm;
 
@@ -61,6 +61,7 @@ void RISCVTargetObjectFile::Initialize(MCContext &Ctx, const TargetMachine &TM) 
 RISCVTargetLowering::RISCVTargetLowering(const TargetMachine &tm, 
                                          const RISCVSubtarget &STI)
     : TargetLowering(tm), Subtarget(STI), IsRV32(Subtarget.isRV32()) {
+
   MVT PtrVT = Subtarget.isRV64() ? MVT::i64 : MVT::i32;
   // Set up the register classes.
   addRegisterClass(MVT::i32,  &RISCV::GR32BitRegClass);
@@ -1206,12 +1207,6 @@ lowerADD(SDValue Op, SelectionDAG &DAG) const
 
 
 //  printf("ADD\n");
-
-  DebugLoc DL = Op.getDebugLoc();
-  EVT VT = Op.getValueType();
-  SDValue OP1 = Op.getOperand(0);
-  SDValue OP2 = Op.getOperand(1);
-
 //    if ()
 
 	return SDValue();
@@ -1220,7 +1215,7 @@ lowerADD(SDValue Op, SelectionDAG &DAG) const
 SDValue RISCVTargetLowering::
 lowerSELECT_CC(SDValue Op, SelectionDAG &DAG) const
 {
-
+/*
   SDLoc DL(Op);
   EVT VT = Op.getOperand(0).getValueType();
   SDValue LHS = Op.getOperand(0);
@@ -1241,7 +1236,7 @@ lowerSELECT_CC(SDValue Op, SelectionDAG &DAG) const
 
 
   SDValue Cond = DAG.getNode(ISD::SETCC, DL, MVT::i1, LHS, RHS, CC);*/
-  return DAG.getNode(RISCVISD::SELECT_CC, DL, VT, Cond, TOP, FOP);
+  return SDValue();
 }
 
 SDValue RISCVTargetLowering::lowerRETURNADDR(SDValue Op, SelectionDAG &DAG) const {
@@ -1553,6 +1548,52 @@ emitCALL(MachineInstr *MI, MachineBasicBlock *BB) const {
 }
 
 MachineBasicBlock *RISCVTargetLowering::
+emitPBCLR(MachineInstr *MI, MachineBasicBlock *BB) const {
+
+    // Some formal checks
+
+
+    const TargetInstrInfo *TII = BB->getParent()->getSubtarget().getInstrInfo();
+    DebugLoc DL = MI->getDebugLoc();
+    
+    errs() << "num.op.: " << MI->getNumOperands();
+
+
+    unsigned int registr   = 0;
+    unsigned int immediate = 0;
+
+    if (MI->getOperand(1).isImm()) {
+        immediate = 1;
+        registr = 2;
+    } else if (MI->getOperand(2).isImm()) {
+        immediate = 2;
+        registr = 1;
+    }
+
+    assert(immediate!=0 && registr!=0);
+
+    int n = MI->getOperand(immediate).getImm();
+   
+    unsigned int l_pos, r_pos;
+
+    if ( ! RI5CY_bitIntervalExtraction(n, &l_pos, &r_pos)) {
+        llvm_unreachable("Unexpected PBCLR to invalid immediate.");
+        return NULL;
+    }
+
+    assert(r_pos <= l_pos);
+
+    MachineInstrBuilder pbclrMI = BuildMI(*BB, MI, DL, TII->get(RISCV::PBCLR));
+    pbclrMI.addOperand(MI->getOperand(0));
+    pbclrMI.addOperand(MI->getOperand(registr));
+    pbclrMI.addImm(l_pos-r_pos+1);
+    pbclrMI.addImm(r_pos);
+    MI->eraseFromParent();
+
+    return BB;
+}
+
+MachineBasicBlock *RISCVTargetLowering::
 emitSelectCC(MachineInstr *MI, MachineBasicBlock *BB) const {
 
   const TargetInstrInfo *TII = BB->getParent()->getSubtarget().getInstrInfo();
@@ -1673,6 +1714,11 @@ EmitInstrWithCustomInserter(MachineInstr *MI, MachineBasicBlock *MBB) const {
   case RISCV::CALL64:
   case RISCV::CALLREG64:
       return emitCALL(MI, MBB);
+
+  case RISCV::PBCLR_PSEUDO:
+      return emitPBCLR(MI, MBB);
+
+
   default:
     llvm_unreachable("Unexpected instr type to insert");
   }

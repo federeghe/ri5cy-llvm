@@ -27,7 +27,7 @@
                  AssemblerPredicate<"FeatureR5CY">; 
 
  def IsNOTR5CY :   Predicate<"!Subtarget.isR5CY()">;
- 
+
 /*******************
 *RISCV Instructions
 ********************/

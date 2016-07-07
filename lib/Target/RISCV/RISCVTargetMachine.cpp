@@ -82,16 +82,25 @@ public:
     return getTM<RISCVTargetMachine>();
   }
 
+  virtual void addISelPrepare() override;
   bool addInstSelector() override;
   void addPreEmitPass() override;
 };
 } // end anonymous namespace
 
-bool RISCVPassConfig::addInstSelector() {
+void RISCVPassConfig::addISelPrepare() {
   if (getRISCVTargetMachine().getSubtargetImpl()->isR5CY()) {
-    addPass(createRISCVRI5CYDagToDagPass());
-  }
+    addPass(createRISCVRI5CYIRPass());
+  } 
+
+    TargetPassConfig::addISelPrepare();
+}
+
+bool RISCVPassConfig::addInstSelector() {
+
+
   addPass(createRISCVISelDag(getRISCVTargetMachine(), getOptLevel()));
+
   return false;
 }
 

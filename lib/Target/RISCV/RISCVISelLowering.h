@@ -229,6 +229,8 @@ private:
   MachineBasicBlock *emitSelectCC(MachineInstr *MI,
                                 MachineBasicBlock *BB) const;
 
+  MachineBasicBlock *emitPBCLR(MachineInstr *MI, MachineBasicBlock *BB) const;
+
 };
 
 class RISCVTargetObjectFile : public TargetLoweringObjectFileELF {

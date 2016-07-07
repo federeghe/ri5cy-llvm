@@ -224,6 +224,9 @@ public:
   bool isS64Imm() const { return isImm(-9223372036854775807LL,9223372036854775807LL); }
 
   bool isU5Imm() const { return isImm(0, 31); }
+
+  bool isUimm32contig0() const { return isU32Imm(); }
+
 };
 
 // Maps of asm register numbers to LLVM register numbers, with 0 indicating

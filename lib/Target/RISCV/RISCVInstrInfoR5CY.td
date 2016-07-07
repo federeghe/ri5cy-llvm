@@ -23,6 +23,15 @@
               ,GR32,uimm32,uimm32>, Requires<[IsR5CY]>;
 
 */
+
+let usesCustomInserter = 1 in {
+  def PBCLR_PSEUDO : Pseudo<(outs GR32:$dst), (ins GR32:$src1, imm32contig0:$src2),
+                           [(set GR32:$dst, (and GR32:$src1, imm32contig0:$src2))]>,
+                           Requires<[IsR5CY]>;
+}
+def PBCLR: InstP1I2C<"p.bclr", 0b0110011, 0b11, 0b011, [], GR32, uimm5, uimm5>,
+                           Requires<[IsR5CY]>;
+
 def PFL1    : InstP1C<"p.fl1", 0b0110011,0b0001000,0b000,
                [(set GR32:$dst, (xor  (ctlz GR32:$src1), (i32 31) ))],GR32>, Requires<[IsR5CY]>;
 

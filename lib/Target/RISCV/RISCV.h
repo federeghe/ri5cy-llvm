@@ -75,6 +75,6 @@ namespace llvm {
                                      CodeGenOpt::Level OptLevel);
   FunctionPass *createRISCVBranchSelectionPass();
 
-  FunctionPass *createRISCVRI5CYDagToDagPass();
+  FunctionPass *createRISCVRI5CYIRPass();
 } // end namespace llvm;
 #endif
