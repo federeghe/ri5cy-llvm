@@ -206,25 +206,6 @@ def PADDUN    : InstP2<"p.adduN",
 					>, Requires<[IsR5CY]>;
 
 
-def PADDURN    : InstP2IC<"p.adduRN",
-                     0b1011011,
-                     0b10,
-                     0b110,
-                     [(set GR32:$dst, 
-                        (srl 
-                          (add 
-                            (add GR32:$src1, GR32:$src2), 
-                            (srl (i32 1), (sub uimm5:$src3, (i32 1))) 
-                          ),
-                          uimm5:$src3
-                        )
-                      ) ],
-                     GR32,
-                     GR32,
-                     uimm5
-					>, Requires<[IsR5CY]>;
-
-
 def PSUBN     : InstP2<"p.subN",
                      0b1011011,
                      0b00,
@@ -247,42 +228,6 @@ def PSUBUN    : InstP2<"p.subuN",
                      uimm5
 					>, Requires<[IsR5CY]>;
 
-def PSUBRN    : InstP2IC<"p.subRN",
-                     0b1011011,
-                     0b00,
-                     0b111,
-                     [(set GR32:$dst, 
-                        (sra
-                          (add 
-                            (sub GR32:$src1, GR32:$src2), 
-                            (srl (i32 1), (sub uimm5:$src3, (i32 1))) 
-                          ),
-                          uimm5:$src3
-                        )
-                      ) ],
-                     GR32,
-                     GR32,
-                     uimm5
-					>, Requires<[IsR5CY]>;
-
-def PSUBURN    : InstP2IC<"p.subuRN",
-                     0b1011011,
-                     0b00,
-                     0b111,
-                     [(set GR32:$dst, 
-                        (srl 
-                          (add 
-                            (sub GR32:$src1, GR32:$src2), 
-                            (srl (i32 1), (sub uimm5:$src3, (i32 1))) 
-                          ),
-                          uimm5:$src3
-                        )
-                      ) ],
-                     GR32,
-                     GR32,
-                     uimm5
-					>, Requires<[IsR5CY]>;
-
 //
 //
 //          GENERAL ALU OPERATION (2) - R Version
@@ -291,12 +236,45 @@ def PSUBURN    : InstP2IC<"p.subuRN",
 
 
 let usesCustomInserter = 1 in {
-  def PADDRN_PSEUDO : Pseudo<(outs GR32:$dst), (ins GR32:$src1, GR32:$src2, uimm32 $imm1, uimm5 $imm2),
+  def PADDRN_PSEUDO : Pseudo<(outs GR32:$dst), (ins GR32:$src1, GR32:$src2, imm32:$imm1, uimm5:$imm2),
                            [(set GR32:$dst, 
                         (sra 
                           (add 
                             (add GR32:$src1, GR32:$src2), 
-                            (uimm32:$imm1) 
+                            imm32:$imm1 
+                          ),
+                          uimm5:$imm2
+                        )
+                      ) ]>,
+                           Requires<[IsR5CY]>;
+  def PADDURN_PSEUDO : Pseudo<(outs GR32:$dst), (ins GR32:$src1, GR32:$src2, imm32:$imm1, uimm5:$imm2),
+                           [(set GR32:$dst, 
+                        (srl 
+                          (add 
+                            (add GR32:$src1, GR32:$src2), 
+                            imm32:$imm1 
+                          ),
+                          uimm5:$imm2
+                        )
+                      ) ]>,
+                           Requires<[IsR5CY]>;
+  def PSUBRN_PSEUDO : Pseudo<(outs GR32:$dst), (ins GR32:$src1, GR32:$src2, imm32:$imm1, uimm5:$imm2),
+                           [(set GR32:$dst, 
+                        (sra 
+                          (add 
+                            (sub GR32:$src1, GR32:$src2), 
+                            imm32:$imm1 
+                          ),
+                          uimm5:$imm2
+                        )
+                      ) ]>,
+                           Requires<[IsR5CY]>;
+  def PSUBURN_PSEUDO : Pseudo<(outs GR32:$dst), (ins GR32:$src1, GR32:$src2, imm32:$imm1, uimm5:$imm2),
+                           [(set GR32:$dst, 
+                        (srl 
+                          (add 
+                            (sub GR32:$src1, GR32:$src2), 
+                            imm32:$imm1 
                           ),
                           uimm5:$imm2
                         )
@@ -305,3 +283,7 @@ let usesCustomInserter = 1 in {
 }
 
 def PADDRN    : InstP2IC<"p.addRN",0b1011011,0b00,0b110,[],GR32,GR32,uimm5>, Requires<[IsR5CY]>;
+def PADDURN    : InstP2IC<"p.adduRN",0b1011011,0b10,0b110,[],GR32,GR32,uimm5>, Requires<[IsR5CY]>;
+def PSUBRN    : InstP2IC<"p.subRN",0b1011011,0b00,0b111,[],GR32,GR32,uimm5>, Requires<[IsR5CY]>;
+def PSUBURN    : InstP2IC<"p.subuRN",0b1011011,0b10,0b111,[],GR32,GR32,uimm5>, Requires<[IsR5CY]>;
+

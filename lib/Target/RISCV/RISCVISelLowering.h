@@ -230,7 +230,7 @@ private:
                                 MachineBasicBlock *BB) const;
 
   MachineBasicBlock *emitPBCLRSET(MachineInstr *MI, MachineBasicBlock *BB, bool isset) const;
-  MachineBasicBlock *emitPADDRN(MachineInstr *MI, MachineBasicBlock *BB) const;
+  MachineBasicBlock *emitPRN(MachineInstr *MI, MachineBasicBlock *BB) const;
 };
 
 class RISCVTargetObjectFile : public TargetLoweringObjectFileELF {

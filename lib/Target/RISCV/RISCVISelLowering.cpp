@@ -1593,14 +1593,33 @@ emitPBCLRSET(MachineInstr *MI, MachineBasicBlock *BB, bool isset) const {
 }
 
 MachineBasicBlock *RISCVTargetLowering::
-emitPADDRN(MachineInstr *MI, MachineBasicBlock *BB) const {
-    // Some formal checks
+emitPRN(MachineInstr *MI, MachineBasicBlock *BB) const {
 
+	assert(Subtarget.isR5CY());
+
+	bool unsign, issub;
+
+	switch(MI->getOpcode()) {
+	    case RISCV::PADDRN_PSEUDO:
+            unsign = false; issub = false;
+        break;
+	    case RISCV::PADDURN_PSEUDO:
+            unsign = true;  issub = false;
+        break;
+	    case RISCV::PSUBRN_PSEUDO:
+            unsign = false; issub = true;
+        break;
+	    case RISCV::PSUBURN_PSEUDO:
+            unsign = true; issub = true;
+        break;
+
+	  default:
+		llvm_unreachable("Unexpected emitPRN");
+	}
 
     const TargetInstrInfo *TII = BB->getParent()->getSubtarget().getInstrInfo();
     DebugLoc DL = MI->getDebugLoc();
     
-    errs() << "num.op.: " << MI->getNumOperands();
 
     const unsigned int reg1 = 1;
     const unsigned int reg2 = 2;
@@ -1614,13 +1633,41 @@ emitPADDRN(MachineInstr *MI, MachineBasicBlock *BB) const {
 
     int n1 = MI->getOperand(imm1).getImm();
     int n2 = MI->getOperand(imm2).getImm();
-   
-    if (__builtin_popcount(n1) == 1 && n2 == (1 << n1-1) ) {
-        errs() << "OK!"
-    } else {
-        errs() << "NOT OK!"
-    }
 
+    errs() << "UNSIGN " << unsign << " ISSUB" << issub << " imm1: " << n1<< " imm2: " << n2 << "\n";
+
+	// A lot of conditions here...
+    if (    n1 > 0
+		 && n2 > 0 
+		 && __builtin_popcount(n1) == 1
+		 && n1 == (1 << (n2-1)) 
+		 && n2 < (1<<6) 
+	   ) {
+		unsigned opcode = issub ? (unsign ? RISCV::PSUBURN : RISCV::PSUBRN) : (unsign ? RISCV::PADDURN : RISCV::PADDRN);
+
+        MachineInstrBuilder paddrnMI = BuildMI(*BB, MI, DL, TII->get(opcode));
+        paddrnMI.addOperand(MI->getOperand(0));
+        paddrnMI.addOperand(MI->getOperand(reg1));
+        paddrnMI.addOperand(MI->getOperand(reg2));
+        paddrnMI.addImm(n2);
+    } else {
+        MachineInstrBuilder sra  = BuildMI(*BB, MI, DL, TII->get(unsign ? RISCV::SRL : RISCV::SRA));
+        sra.addOperand(MI->getOperand(0));
+        sra.addOperand(MI->getOperand(0));
+        sra.addImm(n2);
+
+		MachineInstrBuilder addsub = BuildMI(*BB, sra.getInstr(), DL, TII->get(RISCV::ADDI));
+		addsub.addOperand(MI->getOperand(0));
+		addsub.addOperand(MI->getOperand(0));
+		addsub.addImm(n1);
+
+        MachineInstrBuilder add = BuildMI(*BB, addsub.getInstr(), DL, TII->get(issub ? RISCV::SUB : RISCV::ADD));
+        add.addOperand(MI->getOperand(0));
+        add.addOperand(MI->getOperand(reg1));
+        add.addOperand(MI->getOperand(reg2));
+
+    }
+    MI->eraseFromParent();
     return BB;
 
 }
@@ -1754,7 +1801,10 @@ EmitInstrWithCustomInserter(MachineInstr *MI, MachineBasicBlock *MBB) const {
       return emitPBCLRSET(MI, MBB, true);
 
   case RISCV::PADDRN_PSEUDO:
-      return emitPADDRN(MI, MBB);
+  case RISCV::PADDURN_PSEUDO:
+  case RISCV::PSUBRN_PSEUDO:
+  case RISCV::PSUBURN_PSEUDO:
+      return emitPRN(MI, MBB);
 
   default:
     llvm_unreachable("Unexpected instr type to insert");
