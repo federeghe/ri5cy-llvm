@@ -88,7 +88,7 @@ bool RISCVRI5CYIR::transformBitManipulation(Function &F) {
 }
 
 
-bool RI5CY_bitIntervalExtraction( int n, unsigned int* l_pos, unsigned int* r_pos) {
+bool RI5CY_bitIntervalExtraction( int n, unsigned int* l_pos, unsigned int* r_pos, bool invert) {
 
       unsigned int l_limit, r_limit;
 
@@ -97,7 +97,7 @@ bool RI5CY_bitIntervalExtraction( int n, unsigned int* l_pos, unsigned int* r_po
 			status = BEFORE;
 
 			for(int i=0; i<32; i++) {
-				if ( ( ((int32_t)1) << i) & n ) {
+				if ( invert ^ ((bool)(( ((int32_t)1) << i) & n)) ) {
 					if (status == IN) {
 						status = AFTER;
 						l_limit = i-1;

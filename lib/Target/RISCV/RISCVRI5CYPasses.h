@@ -15,7 +15,7 @@
 
 using namespace llvm;
 
-extern bool RI5CY_bitIntervalExtraction( int n, unsigned int* l_pos=NULL, unsigned int* r_pos=NULL);
+extern bool RI5CY_bitIntervalExtraction( int n, unsigned int* l_pos=NULL, unsigned int* r_pos=NULL, bool invert=false);
 
 namespace llvm {
   void initializeRISCVRI5CYIRPass(PassRegistry&);

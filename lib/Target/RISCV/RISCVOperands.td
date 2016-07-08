@@ -276,15 +276,25 @@ def disp20imm64 : Operand<i64>;
 //===----------------------------------------------------------------------===//
 def U5Imm  : ImmediateAsmOperand<"U5Imm">;
 def uimm5 : Immediate<i32, [{
-  return isUInt<5>(N->getZExtValue());
+  return isUInt<5>(N->getSExtValue());
 }], NOOP_SDNodeXForm, "U5Imm">;
 
 def Uimm32contig0  : ImmediateAsmOperand<"Uimm32contig0">;
 def imm32contig0 : Immediate<i32, [{
   if(isUInt<12>(N->getSExtValue()))
     return false;
+
   if(isInt<32>(N->getSExtValue())) {
       return RI5CY_bitIntervalExtraction(N->getSExtValue());
   }
 }], NOOP_SDNodeXForm, "Uimm32contig0">;
 
+def Uimm32contig1  : ImmediateAsmOperand<"Uimm32contig1">;
+def imm32contig1 : Immediate<i32, [{
+  if(isUInt<12>(N->getSExtValue()))
+    return false;
+
+  if(isInt<32>(N->getSExtValue())) {
+      return RI5CY_bitIntervalExtraction(N->getSExtValue(), NULL, NULL, true);
+  }
+}], NOOP_SDNodeXForm, "Uimm32contig1">;

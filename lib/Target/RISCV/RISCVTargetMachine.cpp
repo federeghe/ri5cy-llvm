@@ -89,9 +89,9 @@ public:
 } // end anonymous namespace
 
 void RISCVPassConfig::addISelPrepare() {
-  if (getRISCVTargetMachine().getSubtargetImpl()->isR5CY()) {
-    addPass(createRISCVRI5CYIRPass());
-  } 
+//  if (getRISCVTargetMachine().getSubtargetImpl()->isR5CY()) {
+//    addPass(createRISCVRI5CYIRPass());
+//  } 
 
     TargetPassConfig::addISelPrepare();
 }

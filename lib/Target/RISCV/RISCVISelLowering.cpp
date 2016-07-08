@@ -1548,16 +1548,13 @@ emitCALL(MachineInstr *MI, MachineBasicBlock *BB) const {
 }
 
 MachineBasicBlock *RISCVTargetLowering::
-emitPBCLR(MachineInstr *MI, MachineBasicBlock *BB) const {
+emitPBCLRSET(MachineInstr *MI, MachineBasicBlock *BB, bool isset) const {
 
     // Some formal checks
 
 
     const TargetInstrInfo *TII = BB->getParent()->getSubtarget().getInstrInfo();
     DebugLoc DL = MI->getDebugLoc();
-    
-    errs() << "num.op.: " << MI->getNumOperands();
-
 
     unsigned int registr   = 0;
     unsigned int immediate = 0;
@@ -1576,14 +1573,16 @@ emitPBCLR(MachineInstr *MI, MachineBasicBlock *BB) const {
    
     unsigned int l_pos, r_pos;
 
-    if ( ! RI5CY_bitIntervalExtraction(n, &l_pos, &r_pos)) {
+    if ( ! RI5CY_bitIntervalExtraction(n, &l_pos, &r_pos, isset)) {
         llvm_unreachable("Unexpected PBCLR to invalid immediate.");
         return NULL;
     }
 
     assert(r_pos <= l_pos);
 
-    MachineInstrBuilder pbclrMI = BuildMI(*BB, MI, DL, TII->get(RISCV::PBCLR));
+    unsigned opcode = isset ? RISCV::PBSET : RISCV::PBCLR;
+
+    MachineInstrBuilder pbclrMI = BuildMI(*BB, MI, DL, TII->get(opcode));
     pbclrMI.addOperand(MI->getOperand(0));
     pbclrMI.addOperand(MI->getOperand(registr));
     pbclrMI.addImm(l_pos-r_pos+1);
@@ -1591,6 +1590,39 @@ emitPBCLR(MachineInstr *MI, MachineBasicBlock *BB) const {
     MI->eraseFromParent();
 
     return BB;
+}
+
+MachineBasicBlock *RISCVTargetLowering::
+emitPADDRN(MachineInstr *MI, MachineBasicBlock *BB) const {
+    // Some formal checks
+
+
+    const TargetInstrInfo *TII = BB->getParent()->getSubtarget().getInstrInfo();
+    DebugLoc DL = MI->getDebugLoc();
+    
+    errs() << "num.op.: " << MI->getNumOperands();
+
+    const unsigned int reg1 = 1;
+    const unsigned int reg2 = 2;
+    const unsigned int imm1 = 3;
+    const unsigned int imm2 = 4;
+
+    assert(MI->getOperand(reg1).isReg());
+    assert(MI->getOperand(reg2).isReg());
+    assert(MI->getOperand(imm1).isImm());
+    assert(MI->getOperand(imm2).isImm());
+
+    int n1 = MI->getOperand(imm1).getImm();
+    int n2 = MI->getOperand(imm2).getImm();
+   
+    if (__builtin_popcount(n1) == 1 && n2 == (1 << n1-1) ) {
+        errs() << "OK!"
+    } else {
+        errs() << "NOT OK!"
+    }
+
+    return BB;
+
 }
 
 MachineBasicBlock *RISCVTargetLowering::
@@ -1716,8 +1748,13 @@ EmitInstrWithCustomInserter(MachineInstr *MI, MachineBasicBlock *MBB) const {
       return emitCALL(MI, MBB);
 
   case RISCV::PBCLR_PSEUDO:
-      return emitPBCLR(MI, MBB);
+      return emitPBCLRSET(MI, MBB, false);
 
+  case RISCV::PBSET_PSEUDO:
+      return emitPBCLRSET(MI, MBB, true);
+
+  case RISCV::PADDRN_PSEUDO:
+      return emitPADDRN(MI, MBB);
 
   default:
     llvm_unreachable("Unexpected instr type to insert");

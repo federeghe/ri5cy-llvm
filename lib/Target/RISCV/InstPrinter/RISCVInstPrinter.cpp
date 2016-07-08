@@ -147,6 +147,16 @@ void RISCVInstPrinter::printUimm32contig0Operand(const MCInst *MI, int OpNum,
     printOperand(MI, OpNum, O);
 }
 
+void RISCVInstPrinter::printUimm32contig1Operand(const MCInst *MI, int OpNum,
+                                           raw_ostream &O) {
+  if(MI->getOperand(OpNum).isImm()){
+    int64_t Value = MI->getOperand(OpNum).getImm();
+    O << Value;
+  }else
+    printOperand(MI, OpNum, O);
+}
+
+
 
 void RISCVInstPrinter::printU12ImmOperand(const MCInst *MI, int OpNum,
                                            raw_ostream &O) {
