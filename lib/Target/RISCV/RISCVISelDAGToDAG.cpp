@@ -452,8 +452,14 @@ void RISCVDAGToDAGISel::processFunctionAfterISel(MachineFunction &MF) {
 
 
 bool RISCVDAGToDAGISel::SelectPCLIP(SDValue Dest, SDValue &SRC1, SDValue &SRC2) {
-	if (Dest.getOpcode() != ISD::SELECT) return false;
-	if (Dest.getOperand(0).getOpcode() != ISD::SETCC) return false;
+
+	/* This rule is a bit complicated to be matched. The structure is:
+     *                    ... TODO
+	 */
+	
+
+  if (Dest.getOpcode() != ISD::SELECT) return false;
+  if (Dest.getOperand(0).getOpcode() != ISD::SETCC) return false;
 
   int select;
   int pos_constant_low;
@@ -556,8 +562,7 @@ bool RISCVDAGToDAGISel::SelectPCLIP(SDValue Dest, SDValue &SRC1, SDValue &SRC2) 
   
   SRC1 = *reg_in;
   SRC2 = CurDAG->getConstant(imm, SDLoc(Dest), MVT::i32);
-  errs() << "CHECKED OK IMM=" << imm << "!\n"; 
 
-
-	return true;
+  return true;
 }
+

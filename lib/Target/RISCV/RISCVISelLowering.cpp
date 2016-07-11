@@ -1634,8 +1634,6 @@ emitPRN(MachineInstr *MI, MachineBasicBlock *BB) const {
     int n1 = MI->getOperand(imm1).getImm();
     int n2 = MI->getOperand(imm2).getImm();
 
-    errs() << "UNSIGN " << unsign << " ISSUB" << issub << " imm1: " << n1<< " imm2: " << n2 << "\n";
-
 	// A lot of conditions here...
     if (    n1 > 0
 		 && n2 > 0 
