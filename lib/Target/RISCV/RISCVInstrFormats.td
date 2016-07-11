@@ -419,4 +419,3 @@ class InstP1I2C<string mnemonic, bits<7> opcode, bits<2> f2, bits<3> funct3,
   let Inst{6 - 0} = opcode;
 }
 
-

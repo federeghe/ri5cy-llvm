@@ -283,7 +283,28 @@ let usesCustomInserter = 1 in {
 }
 
 def PADDRN    : InstP2IC<"p.addRN",0b1011011,0b00,0b110,[],GR32,GR32,uimm5>, Requires<[IsR5CY]>;
-def PADDURN    : InstP2IC<"p.adduRN",0b1011011,0b10,0b110,[],GR32,GR32,uimm5>, Requires<[IsR5CY]>;
+def PADDURN   : InstP2IC<"p.adduRN",0b1011011,0b10,0b110,[],GR32,GR32,uimm5>, Requires<[IsR5CY]>;
 def PSUBRN    : InstP2IC<"p.subRN",0b1011011,0b00,0b111,[],GR32,GR32,uimm5>, Requires<[IsR5CY]>;
-def PSUBURN    : InstP2IC<"p.subuRN",0b1011011,0b10,0b111,[],GR32,GR32,uimm5>, Requires<[IsR5CY]>;
+def PSUBURN   : InstP2IC<"p.subuRN",0b1011011,0b10,0b111,[],GR32,GR32,uimm5>, Requires<[IsR5CY]>;
+
+def PCLIP_P   : ComplexPattern<i32, 2, "SelectPCLIP", [select], []>;
+def PCLIP     : InstRISCV<4, (outs GR32:$dst), (ins GR32:$src1, uimm5:$imm2), 
+                "p.clip\t$dst, $src1, $imm2", []> {
+  field bits<32> Inst;
+
+  bits<5> RD;
+  bits<5> RS1;
+  bits<5> IMM;
+
+  let Inst{31-25} = 0b0001010;
+  let Inst{24-20} = IMM;
+  let Inst{19-15} = RS1;
+  let Inst{14-12} = 0b001;
+  let Inst{11-7} = RD;
+  let Inst{6 - 0} = 0b0110011;
+}
+
+
+def : Pat<(PCLIP_P GR32:$src, uimm5:$imm1),
+          (PCLIP GR32:$src, uimm5:$imm1)>, Requires<[IsR5CY]>;
 
