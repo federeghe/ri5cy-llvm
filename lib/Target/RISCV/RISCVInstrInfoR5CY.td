@@ -39,7 +39,10 @@ def PBCLR: InstP1I2C<"p.bclr", 0b0110011, 0b11, 0b011, [], GR32, uimm5, uimm5>,
 def PBSET: InstP1I2C<"p.bset", 0b0110011, 0b11, 0b100, [], GR32, uimm5, uimm5>,
                            Requires<[IsR5CY]>;
 
-def PFL1    : InstP1C<"p.fl1", 0b0110011,0b0001000,0b000,
+def PFF1    : InstP1C<"p.ff1", 0b0110011,0b0001000,0b000,
+               [(set GR32:$dst, (add  (cttz GR32:$src1), (i32 1) ))],GR32>, Requires<[IsR5CY]>;
+
+def PFL1    : InstP1C<"p.fl1", 0b0110011,0b0001000,0b001,
                [(set GR32:$dst, (xor  (ctlz GR32:$src1), (i32 31) ))],GR32>, Requires<[IsR5CY]>;
 
 def PCNT     : InstP1C<"p.cnt", 0b0110011,0b0001000,0b011,
@@ -54,7 +57,6 @@ def PCLB2    : InstP1C<"p.clb", 0b0110011,0b0001000,0b010,
 def PROR     : InstP2C<"p.ror", 0b0110011,0b0000100,0b101,
                [(set GR32:$dst, (rotr GR32:$src1, GR32:$src2))],GR32,GR32>,
                Requires<[IsR5CY]>;
-
 
 //
 //
@@ -176,6 +178,53 @@ def PEXTBZ    : InstP1C<"p.extbz",0b0110011,0b0001000,0b111,
 def PEXTBS    : InstP1C<"p.extbs",0b0110011,0b0001000,0b110,
                 [(set GR32:$dst,(sext8  GR32:$src1))],GR32>, Requires<[IsR5CY]>;
 
+//
+//
+//          GENERAL ALU OPERATION (1)
+//              P.CLIP(U) special instructions
+//
+//
+
+def PCLIP_P   : ComplexPattern<i32, 2, "SelectPCLIP", [select], []>;
+def PCLIPU_P  : ComplexPattern<i32, 2, "SelectPCLIPU", [select], []>;
+
+// We need a custom instruction for pclip and pclipu
+def PCLIP     : InstRISCV<4, (outs GR32:$dst), (ins GR32:$src1, uimm5:$imm2), 
+                "p.clip\t$dst, $src1, $imm2", []> {
+  field bits<32> Inst;
+
+  bits<5> RD;
+  bits<5> RS1;
+  bits<5> IMM;
+
+  let Inst{31-25} = 0b0001010;
+  let Inst{24-20} = IMM;
+  let Inst{19-15} = RS1;
+  let Inst{14-12} = 0b001;
+  let Inst{11-7} = RD;
+  let Inst{6 - 0} = 0b0110011;
+}
+
+def PCLIPU    : InstRISCV<4, (outs GR32:$dst), (ins GR32:$src1, uimm5:$imm2), 
+                "p.clipu\t$dst, $src1, $imm2", []> {
+  field bits<32> Inst;
+
+  bits<5> RD;
+  bits<5> RS1;
+  bits<5> IMM;
+
+  let Inst{31-25} = 0b0001010;
+  let Inst{24-20} = IMM;
+  let Inst{19-15} = RS1;
+  let Inst{14-12} = 0b010;
+  let Inst{11-7} = RD;
+  let Inst{6 - 0} = 0b0110011;
+}
+
+def : Pat<(PCLIP_P GR32:$src, uimm5:$imm1),
+          (PCLIP GR32:$src, uimm5:$imm1)>, Requires<[IsR5CY]>;
+def : Pat<(PCLIPU_P GR32:$src, uimm5:$imm1),
+          (PCLIPU GR32:$src, uimm5:$imm1)>, Requires<[IsR5CY]>;
 
  
 //
@@ -286,25 +335,4 @@ def PADDRN    : InstP2IC<"p.addRN",0b1011011,0b00,0b110,[],GR32,GR32,uimm5>, Req
 def PADDURN   : InstP2IC<"p.adduRN",0b1011011,0b10,0b110,[],GR32,GR32,uimm5>, Requires<[IsR5CY]>;
 def PSUBRN    : InstP2IC<"p.subRN",0b1011011,0b00,0b111,[],GR32,GR32,uimm5>, Requires<[IsR5CY]>;
 def PSUBURN   : InstP2IC<"p.subuRN",0b1011011,0b10,0b111,[],GR32,GR32,uimm5>, Requires<[IsR5CY]>;
-
-def PCLIP_P   : ComplexPattern<i32, 2, "SelectPCLIP", [select], []>;
-def PCLIP     : InstRISCV<4, (outs GR32:$dst), (ins GR32:$src1, uimm5:$imm2), 
-                "p.clip\t$dst, $src1, $imm2", []> {
-  field bits<32> Inst;
-
-  bits<5> RD;
-  bits<5> RS1;
-  bits<5> IMM;
-
-  let Inst{31-25} = 0b0001010;
-  let Inst{24-20} = IMM;
-  let Inst{19-15} = RS1;
-  let Inst{14-12} = 0b001;
-  let Inst{11-7} = RD;
-  let Inst{6 - 0} = 0b0110011;
-}
-
-
-def : Pat<(PCLIP_P GR32:$src, uimm5:$imm1),
-          (PCLIP GR32:$src, uimm5:$imm1)>, Requires<[IsR5CY]>;
 

@@ -16,6 +16,8 @@
 using namespace llvm;
 
 extern bool RI5CY_bitIntervalExtraction( int n, unsigned int* l_pos=NULL, unsigned int* r_pos=NULL, bool invert=false);
+extern bool RI5CY_pclip_check(SelectionDAG* CurDAG, const SDValue &Dest, SDValue &SRC1, SDValue &SRC2, bool unsign);
+
 
 namespace llvm {
   void initializeRISCVRI5CYIRPass(PassRegistry&);

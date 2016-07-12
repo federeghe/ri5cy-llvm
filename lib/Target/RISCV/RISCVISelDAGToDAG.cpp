@@ -12,7 +12,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "RISCVTargetMachine.h"
-#include "RISCVRI5CYPasses.h"
+#include "RISCVRI5CYHelpers.h"
 #include "llvm/CodeGen/SelectionDAGISel.h"
 #include "llvm/CodeGen/MachineRegisterInfo.h"
 #include "llvm/CodeGen/MachineFunction.h"
@@ -206,7 +206,7 @@ class RISCVDAGToDAGISel : public SelectionDAGISel {
 
 
  bool SelectPCLIP(SDValue Dest, SDValue &SRC1, SDValue &SRC2);
-
+ bool SelectPCLIPU(SDValue Dest, SDValue &SRC1, SDValue &SRC2);
 public:
   RISCVDAGToDAGISel(RISCVTargetMachine &TM, CodeGenOpt::Level OptLevel)
     : SelectionDAGISel(TM, OptLevel),
@@ -452,117 +452,9 @@ void RISCVDAGToDAGISel::processFunctionAfterISel(MachineFunction &MF) {
 
 
 bool RISCVDAGToDAGISel::SelectPCLIP(SDValue Dest, SDValue &SRC1, SDValue &SRC2) {
-
-	/* This rule is a bit complicated to be matched. The structure is:
-     *                    ... TODO
-	 */
-	
-
-  if (Dest.getOpcode() != ISD::SELECT) return false;
-  if (Dest.getOperand(0).getOpcode() != ISD::SETCC) return false;
-
-  int select;
-  int pos_constant_low;
-
-	if (   Dest.getOperand(1).getOpcode() == ISD::SELECT 
-      && Dest.getOperand(2).getOpcode() == ISD::Constant) {
-    select = 1;
-    pos_constant_low = 2;
-  } else
-	if (   Dest.getOperand(1).getOpcode() == ISD::Constant 
-      && Dest.getOperand(2).getOpcode() == ISD::SELECT) {
-    select = 2;
-    pos_constant_low = 1;
-  } else { 
-    return false;
-  }
-
-  /** Select one check **/
-
-  auto setcc_outer = Dest.getOperand(0);
-  const SDValue *reg_in;
-  int pos_constant_low_cc;
-  // Check setCC
-  if (setcc_outer.getOperand(0).getOpcode() == ISD::Constant) {
-    pos_constant_low_cc = 0;
-    reg_in = &setcc_outer.getOperand(1);
-  } else
-  if (setcc_outer.getOperand(1).getOpcode() == ISD::Constant)
-  {
-    reg_in = &setcc_outer.getOperand(0);
-    pos_constant_low_cc = 1;
-  } else {
-    return false;
-  }
-
-  int32_t low_constant = Dest.getConstantOperandVal(pos_constant_low);
-
-  if ( low_constant >= 0) {
-    return false;
-  }
-  if (__builtin_popcount(-low_constant) != 1) {
-    return false;
-  }
-
-  int32_t low_constant_cc = setcc_outer.getConstantOperandVal(pos_constant_low_cc);
-
-
-  if (setcc_outer.getOperand(2).getOpcode() == ISD::CONDCODE && cast<CondCodeSDNode>(*setcc_outer.getOperand(2).getNode()).get() == ISD::SETLT) {
-
-    if (low_constant_cc != low_constant+1 ) {
-      return false;
-    }
-  } else {
-    // TODO: Manage case with different orders
-    return false;
-  }
-
-  /* Check the inner select */
-  auto setcc_inner = Dest.getOperand(select).getOperand(0);
-  auto reg_xxx = &Dest.getOperand(select).getOperand(1);
-
-  const SDValue *reg_out;
-  int inner_pos_constant_low_cc;
-  if (setcc_inner.getOperand(0).getOpcode() == ISD::Constant) {
-    inner_pos_constant_low_cc = 0;
-    reg_out = &setcc_inner.getOperand(1);
-  } else 
-  if (setcc_outer.getOperand(1).getOpcode() == ISD::Constant)
-  {
-    reg_out = &setcc_inner.getOperand(0);
-    inner_pos_constant_low_cc = 1;
-  } else {
-    return false;
-  } 
-
-
-  MemSDNode *mem_in = cast<MemSDNode>(*reg_in);
-  MemSDNode *mem_out = cast<MemSDNode>(*reg_out);
-  MemSDNode *mem_xxx = cast<MemSDNode>(*reg_xxx);
-
-  if(*(mem_in->getMemOperand()) != *(mem_out->getMemOperand())   ||
-     *(mem_in->getMemOperand()) != *(mem_xxx->getMemOperand()) ) {
-    return false;
-  }
-
-  
-  int32_t inner_low_constant_cc = setcc_inner.getConstantOperandVal(inner_pos_constant_low_cc);
-
- 
-  if (setcc_inner.getOperand(2).getOpcode() == ISD::CONDCODE && cast<CondCodeSDNode>(*setcc_inner.getOperand(2).getNode()).get() == ISD::SETLT) {
-    if (inner_low_constant_cc != -low_constant_cc) {
-      return false;
-    }
-  } else {
-    // TODO: Manage case with different orders
-    return false;
-  }
-
-  unsigned int imm = 32-__builtin_clz(-low_constant)-1;
-  
-  SRC1 = *reg_in;
-  SRC2 = CurDAG->getConstant(imm, SDLoc(Dest), MVT::i32);
-
-  return true;
+    return RI5CY_pclip_check(CurDAG, Dest, SRC1, SRC2, false);
 }
 
+bool RISCVDAGToDAGISel::SelectPCLIPU(SDValue Dest, SDValue &SRC1, SDValue &SRC2) {
+    return RI5CY_pclip_check(CurDAG, Dest, SRC1, SRC2, true);
+}

@@ -28,7 +28,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/MC/MCInst.h"
 
-#include "RISCVRI5CYPasses.h"
+#include "RISCVRI5CYHelpers.h"
 
 
 using namespace llvm;
@@ -191,9 +191,9 @@ RISCVTargetLowering::RISCVTargetLowering(const TargetMachine &tm,
       if(!Subtarget.isR5CY()) {
         setOperationAction(ISD::CTPOP,           VT, Expand);
         setOperationAction(ISD::CTLZ,            VT, Expand);
+        setOperationAction(ISD::CTTZ,            VT, Expand);
       }
 
-      setOperationAction(ISD::CTTZ,            VT, Expand);
       setOperationAction(ISD::CTTZ_ZERO_UNDEF, VT, Expand);
       setOperationAction(ISD::CTLZ_ZERO_UNDEF, VT, Expand);
 
