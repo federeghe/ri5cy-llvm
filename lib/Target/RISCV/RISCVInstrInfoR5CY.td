@@ -40,7 +40,7 @@ def PBSET: InstP1I2C<"p.bset", 0b0110011, 0b11, 0b100, [], GR32, uimm5, uimm5>,
                            Requires<[IsR5CY]>;
 
 def PFF1    : InstP1C<"p.ff1", 0b0110011,0b0001000,0b000,
-               [(set GR32:$dst, (add  (cttz GR32:$src1), (i32 1) ))],GR32>, Requires<[IsR5CY]>;
+               [(set GR32:$dst, (cttz GR32:$src1))],GR32>, Requires<[IsR5CY]>;
 
 def PFL1    : InstP1C<"p.fl1", 0b0110011,0b0001000,0b001,
                [(set GR32:$dst, (xor  (ctlz GR32:$src1), (i32 31) ))],GR32>, Requires<[IsR5CY]>;

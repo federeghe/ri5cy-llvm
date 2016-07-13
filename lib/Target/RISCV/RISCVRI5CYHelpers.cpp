@@ -41,7 +41,6 @@ bool RISCVRI5CYIR::transformBitManipulation(Function &F) {
 
     for (auto& BB : F) {
         for (auto& I : BB) {
-            errs() << "  Instruction: " << I.getOpcodeName() << '\n';
             
             if ( I.getOpcode() == Instruction::And ) {
                 // Manage BSET and BCLR
@@ -59,7 +58,6 @@ bool RISCVRI5CYIR::transformBitManipulation(Function &F) {
 		          	if (immediate == 0)	{ errs() << "IMM=0\n"; continue; }
 
 
-                errs() << "MANAGING BCLR" << '\n';
 			          // Now we have to check if the immediate is in the form 111100...00111
 			          // or we cannot do anything.
 			          unsigned int limit_l;

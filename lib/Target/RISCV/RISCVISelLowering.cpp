@@ -190,10 +190,10 @@ RISCVTargetLowering::RISCVTargetLowering(const TargetMachine &tm,
 
       if(!Subtarget.isR5CY()) {
         setOperationAction(ISD::CTPOP,           VT, Expand);
-        setOperationAction(ISD::CTLZ,            VT, Expand);
         setOperationAction(ISD::CTTZ,            VT, Expand);
       }
 
+      setOperationAction(ISD::CTLZ,            VT, Expand);
       setOperationAction(ISD::CTTZ_ZERO_UNDEF, VT, Expand);
       setOperationAction(ISD::CTLZ_ZERO_UNDEF, VT, Expand);
 
