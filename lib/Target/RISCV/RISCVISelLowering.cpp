@@ -1536,52 +1536,84 @@ emitCALL(MachineInstr *MI, MachineBasicBlock *BB) const {
 }
 
 MachineBasicBlock *RISCVTargetLowering::
-emitPINSERT(MachineInstr *MI, MachineBasicBlock *BB) const {
+emitPEXTRACT(MachineInstr *MI, MachineBasicBlock *BB, bool unsign) const {
 
+	const unsigned src1_pos = 1;
+	const unsigned imm2_pos = 2;
+	const unsigned imm3_pos = 3;
+
+	assert(MI->getNumOperands() == 4);
+	assert(MI->getOperand(src1_pos).isReg());
+	assert(MI->getOperand(imm2_pos).isImm());
+	assert(MI->getOperand(imm3_pos).isImm());
+
+  const TargetInstrInfo *TII = BB->getParent()->getSubtarget().getInstrInfo();
+  DebugLoc DL = MI->getDebugLoc();
+
+  int imm2 = MI->getOperand(imm2_pos).getImm();
+  int imm3 = MI->getOperand(imm3_pos).getImm();
+
+
+  if (imm2 + imm3 <= 32) {
+    MachineInstrBuilder newMI = BuildMI(*BB, MI, DL, TII->get(unsign ? RISCV::PEXTRACTU : RISCV::PEXTRACT));
+    newMI.addOperand(MI->getOperand(0));
+    newMI.addOperand(MI->getOperand(src1_pos));
+    newMI.addImm(32 - imm2 - imm3);
+    newMI.addImm(imm3);  
+  } else {
+    // The result is always zero
+    MachineInstrBuilder newMI = BuildMI(*BB, MI, DL, TII->get(ISD::SHL));
+    newMI.addOperand(MI->getOperand(0));
+    newMI.addOperand(MI->getOperand(src1_pos));
+    newMI.addImm(32);
+  }
+  MI->eraseFromParent();
+
+  return BB;
+}
+
+MachineBasicBlock *RISCVTargetLowering::
+emitPINSERT(MachineInstr *MI, MachineBasicBlock *BB) const {
 
 	const unsigned dst_pos = 1;
 	const unsigned src_pos = 2;
 	const unsigned imm_pos = 3;
 
 	assert(MI->getNumOperands() == 4);
-
-    const TargetInstrInfo *TII = BB->getParent()->getSubtarget().getInstrInfo();
-    DebugLoc DL = MI->getDebugLoc();
-
 	assert(MI->getOperand(dst_pos).isReg());
 	assert(MI->getOperand(src_pos).isReg());
 	assert(MI->getOperand(imm_pos).isImm());
 
-  errs() << "0: " << MI->getOperand(0).getReg() << "1: " << MI->getOperand(1).getReg()
-         << "2: " << MI->getOperand(2).getReg() << "3: " << MI->getOperand(3).getImm();
+  const TargetInstrInfo *TII = BB->getParent()->getSubtarget().getInstrInfo();
+  DebugLoc DL = MI->getDebugLoc();
+
+  int n = MI->getOperand(imm_pos).getImm();
+ 
+  unsigned int l_pos, r_pos;
+
+  if ( ! RI5CY_bitIntervalExtraction(n, &l_pos, &r_pos, true)) {
+      llvm_unreachable("Unexpected PINSERT to invalid immediate.");
+      return NULL;
+  }
+
+  assert(r_pos <= l_pos);
+  assert(isUInt<5>(r_pos) && isUInt<5>(l_pos));
+
+  unsigned opcode = RISCV::PINSERT;
+
+  MachineInstrBuilder pinsertMI = BuildMI(*BB, MI, DL, TII->get(opcode));
 
 
-    int n = MI->getOperand(imm_pos).getImm();
-   
-    unsigned int l_pos, r_pos;
+  // We have to add the destination two times: the first source register in
+  // p.insert is the destination.
+  pinsertMI.addOperand(MI->getOperand(0));
+  pinsertMI.addOperand(MI->getOperand(dst_pos));
+  pinsertMI.addOperand(MI->getOperand(src_pos));
+  pinsertMI.addImm(l_pos);
+  pinsertMI.addImm(r_pos);
+  MI->eraseFromParent();
 
-    if ( ! RI5CY_bitIntervalExtraction(n, &l_pos, &r_pos, true)) {
-        llvm_unreachable("Unexpected PINSERT to invalid immediate.");
-        return NULL;
-    }
-
-    assert(r_pos <= l_pos);
-
-    unsigned opcode = RISCV::PINSERT;
-
-    MachineInstrBuilder pinsertMI = BuildMI(*BB, MI, DL, TII->get(opcode));
-
-
-    // We have to add the destination two times: the first source register in
-    // p.insert is the destination.
-    pinsertMI.addOperand(MI->getOperand(0));
-    pinsertMI.addOperand(MI->getOperand(dst_pos));
-    pinsertMI.addOperand(MI->getOperand(src_pos));
-    pinsertMI.addImm(l_pos);
-    pinsertMI.addImm(r_pos);
-    MI->eraseFromParent();
-
-    return BB;
+  return BB;
 }
 
 
@@ -1829,6 +1861,13 @@ EmitInstrWithCustomInserter(MachineInstr *MI, MachineBasicBlock *MBB) const {
   case RISCV::CALL64:
   case RISCV::CALLREG64:
       return emitCALL(MI, MBB);
+
+  case RISCV::PEXTRACT_PSEUDO:
+  case RISCV::PEXTRACT_PSEUDO_REV:
+      return emitPEXTRACT(MI, MBB, false);
+  case RISCV::PEXTRACTU_PSEUDO:
+  case RISCV::PEXTRACTU_PSEUDO_REV:
+      return emitPEXTRACT(MI, MBB, true);
 
   case RISCV::PINSERT_PSEUDO:
       return emitPINSERT(MI, MBB);

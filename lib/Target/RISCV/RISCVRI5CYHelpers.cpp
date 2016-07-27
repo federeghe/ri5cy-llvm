@@ -96,6 +96,7 @@ bool RI5CY_bitIntervalExtraction( int n, unsigned int* l_pos, unsigned int* r_po
 
 			for(int i=0; i<32; i++) {
 				if ( invert ^ ((bool)(( ((int32_t)1) << i) & n)) ) {
+          // Not in the sequence
 					if (status == IN) {
 						status = AFTER;
 						l_limit = i-1;
@@ -109,7 +110,9 @@ bool RI5CY_bitIntervalExtraction( int n, unsigned int* l_pos, unsigned int* r_po
 						// We found another 0 after the first sequence 
 						status = INVALID;
 						return false;
-					}
+					} else {
+            l_limit = i;
+          }
 				}
 
 			}

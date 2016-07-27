@@ -24,7 +24,23 @@
 
 */
 
+
 let usesCustomInserter = 1 in {
+  def PEXTRACT_PSEUDO : Pseudo<(outs GR32:$dst), (ins GR32:$src1, uimm5:$imm2, uimm5:$imm3),
+                           [(set GR32:$dst, (shl (srl GR32:$src1, uimm5:$imm2), uimm5:$imm3 ))]>,
+                           Requires<[IsR5CY]>;
+  def PEXTRACT_PSEUDO_REV : Pseudo<(outs GR32:$dst), (ins GR32:$src1, uimm5:$imm2, uimm5:$imm3),
+                           [(set GR32:$dst, (srl (shl GR32:$src1, uimm5:$imm3), uimm5:$imm2 ))]>,
+                           Requires<[IsR5CY]>;
+
+  def PEXTRACTU_PSEUDO : Pseudo<(outs GR32:$dst), (ins GR32:$src1, uimm5:$imm2, uimm5:$imm3),
+                           [(set GR32:$dst, (shl (sra GR32:$src1, uimm5:$imm2), uimm5:$imm3 ))]>,
+                           Requires<[IsR5CY]>;
+  def PEXTRACTU_PSEUDO_REV : Pseudo<(outs GR32:$dst), (ins GR32:$src1, uimm5:$imm2, uimm5:$imm3),
+                           [(set GR32:$dst, (sra (shl GR32:$src1, uimm5:$imm3), uimm5:$imm2 ))]>,
+                           Requires<[IsR5CY]>;
+
+
   def PINSERT_PSEUDO : Pseudo_with_cstr<(outs GR32:$dst), (ins GR32:$rd, GR32:$src1, imm32contig0:$src2),
                            [(set GR32:$dst, (or GR32:$rd, (and GR32:$src1, imm32contig1:$src2)))],"$rd = $dst">,
                            Requires<[IsR5CY]>;
@@ -37,6 +53,14 @@ let usesCustomInserter = 1 in {
                            [(set GR32:$dst, (or GR32:$src1, imm32contig1:$src2))]>,
                            Requires<[IsR5CY]>;
 }
+
+def PEXTRACT: InstP1I2C<"p.extract", 0b0110011, 0b11, 0b000,
+                       [], 
+                        GR32, uimm5, uimm5>, Requires<[IsR5CY]>;
+
+def PEXTRACTU: InstP1I2C<"p.extractu", 0b0110011, 0b11, 0b001,
+                       [], 
+                        GR32, uimm5, uimm5>, Requires<[IsR5CY]>;
 
 def PINSERT  : InstP1I2C_DSTasSRC<"p.insert", 0b0110011, 0b11, 0b010, [], GR32, uimm5, uimm5>,
                            Requires<[IsR5CY]>;
