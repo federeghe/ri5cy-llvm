@@ -229,6 +229,7 @@ private:
   MachineBasicBlock *emitSelectCC(MachineInstr *MI,
                                 MachineBasicBlock *BB) const;
 
+  MachineBasicBlock *emitPINSERT(MachineInstr *MI, MachineBasicBlock *BB) const;
   MachineBasicBlock *emitPBCLRSET(MachineInstr *MI, MachineBasicBlock *BB, bool isset) const;
   MachineBasicBlock *emitPRN(MachineInstr *MI, MachineBasicBlock *BB) const;
 };

@@ -431,18 +431,6 @@ RISCVTargetLowering::RISCVTargetLowering(const TargetMachine &tm,
   setOperationAction(ISD::VACOPY , MVT::Other, Expand);
   setOperationAction(ISD::VAEND  , MVT::Other, Expand);
 
-
-  if (Subtarget.isR5CY()) {
-	  for (unsigned I = MVT::FIRST_FP_VALUETYPE;
-		   I <= MVT::LAST_FP_VALUETYPE;
-		   ++I) {
-		MVT VT = MVT::SimpleValueType(I);
-        //setOperationAction(ISD::SELECT, VT, Custom);
-      }
-  //    setTargetDAGCombine(ISD::SELECT);
-  }
-
-
   // Compute derived properties from the register classes
   computeRegisterProperties(STI.getRegisterInfo());
 }
@@ -1548,9 +1536,59 @@ emitCALL(MachineInstr *MI, MachineBasicBlock *BB) const {
 }
 
 MachineBasicBlock *RISCVTargetLowering::
+emitPINSERT(MachineInstr *MI, MachineBasicBlock *BB) const {
+
+
+	const unsigned dst_pos = 1;
+	const unsigned src_pos = 2;
+	const unsigned imm_pos = 3;
+
+	assert(MI->getNumOperands() == 4);
+
+    const TargetInstrInfo *TII = BB->getParent()->getSubtarget().getInstrInfo();
+    DebugLoc DL = MI->getDebugLoc();
+
+	assert(MI->getOperand(dst_pos).isReg());
+	assert(MI->getOperand(src_pos).isReg());
+	assert(MI->getOperand(imm_pos).isImm());
+
+  errs() << "0: " << MI->getOperand(0).getReg() << "1: " << MI->getOperand(1).getReg()
+         << "2: " << MI->getOperand(2).getReg() << "3: " << MI->getOperand(3).getImm();
+
+
+    int n = MI->getOperand(imm_pos).getImm();
+   
+    unsigned int l_pos, r_pos;
+
+    if ( ! RI5CY_bitIntervalExtraction(n, &l_pos, &r_pos, true)) {
+        llvm_unreachable("Unexpected PINSERT to invalid immediate.");
+        return NULL;
+    }
+
+    assert(r_pos <= l_pos);
+
+    unsigned opcode = RISCV::PINSERT;
+
+    MachineInstrBuilder pinsertMI = BuildMI(*BB, MI, DL, TII->get(opcode));
+
+
+    // We have to add the destination two times: the first source register in
+    // p.insert is the destination.
+    pinsertMI.addOperand(MI->getOperand(0));
+    pinsertMI.addOperand(MI->getOperand(dst_pos));
+    pinsertMI.addOperand(MI->getOperand(src_pos));
+    pinsertMI.addImm(l_pos);
+    pinsertMI.addImm(r_pos);
+    MI->eraseFromParent();
+
+    return BB;
+}
+
+
+MachineBasicBlock *RISCVTargetLowering::
 emitPBCLRSET(MachineInstr *MI, MachineBasicBlock *BB, bool isset) const {
 
-    // Some formal checks
+    // TODO formal checks
 
 
     const TargetInstrInfo *TII = BB->getParent()->getSubtarget().getInstrInfo();
@@ -1791,6 +1829,9 @@ EmitInstrWithCustomInserter(MachineInstr *MI, MachineBasicBlock *MBB) const {
   case RISCV::CALL64:
   case RISCV::CALLREG64:
       return emitCALL(MI, MBB);
+
+  case RISCV::PINSERT_PSEUDO:
+      return emitPINSERT(MI, MBB);
 
   case RISCV::PBCLR_PSEUDO:
       return emitPBCLRSET(MI, MBB, false);

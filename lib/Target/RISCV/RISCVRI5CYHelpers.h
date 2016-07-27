@@ -1,3 +1,12 @@
+//===- RISCVRI5CYHelpers.h - Helper functions for RI5CY ---------*- C++ -*-===//
+//
+//                     The LLVM Compiler Infrastructure
+//
+// This file is distributed under the University of Illinois Open Source
+// License. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+
 #define DEBUG_TYPE "riscv-ri5cy-passes"
 
 #include <map>

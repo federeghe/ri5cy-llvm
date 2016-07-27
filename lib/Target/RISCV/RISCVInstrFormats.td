@@ -269,7 +269,6 @@ class Pseudo<dag outs, dag ins, list<dag> pattern>
   let isCodeGenOnly = 1;
 }
 
-
 //P-Type
 class InstPC2<string mnemonic, bits<7> op, bits<10> funct10, 
             RegisterOperand cls1, 
@@ -398,6 +397,7 @@ class InstP2IC<string mnemonic, bits<7> opcode, bits<2> f2, bits<3> funct3,
   let Inst{6 - 0} = opcode;
 }
 
+// P-Type 1Reg + 2 Imm (custom)
 class InstP1I2C<string mnemonic, bits<7> opcode, bits<2> f2, bits<3> funct3,
             list<dag> pattern,
             RegisterOperand cls1,  Immediate imm3,  Immediate imm2>
@@ -418,4 +418,37 @@ class InstP1I2C<string mnemonic, bits<7> opcode, bits<2> f2, bits<3> funct3,
   let Inst{11-7} = RD;
   let Inst{6 - 0} = opcode;
 }
+
+class InstP1I2C_DSTasSRC<string mnemonic, bits<7> opcode, bits<2> f2, bits<3> funct3,
+            list<dag> pattern,
+            RegisterOperand cls1,  Immediate imm3,  Immediate imm2>
+  : InstRISCV<4, (outs cls1:$dst), (ins cls1:$src0, cls1:$src1, imm3:$imm3, imm2:$imm2), 
+                mnemonic#"\t$dst, $src1, $imm3, $imm2", pattern> {
+  field bits<32> Inst;
+
+  bits<5> RD;
+  bits<5> RS1;
+  bits<5> IMM3;
+  bits<5> IMM2;
+
+  let Constraints = "$dst = $src0";
+
+  let Inst{31-30} = f2;
+  let Inst{29-25} = IMM3;
+  let Inst{24-20} = IMM2;
+  let Inst{19-15} = RS1;
+  let Inst{14-12} = funct3;
+  let Inst{11-7} = RD;
+  let Inst{6 - 0} = opcode;
+}
+
+/// Special case with constraints
+class Pseudo_with_cstr<dag outs, dag ins, list<dag> pattern, string cstr>
+  : InstRISCV<0, outs, ins, "", pattern> {
+  let isPseudo = 1;
+  let isCodeGenOnly = 1;
+  let Constraints = cstr;
+}
+
+
 
