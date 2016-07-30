@@ -11,8 +11,6 @@
 
 using namespace llvm;
 
-
-
 INITIALIZE_PASS(RISCVRI5CYIR, "riscv-ri5cy-IR-pass", 
                 "RISCV RI5CY IR pass",false, false)
 
@@ -32,57 +30,8 @@ bool RISCVRI5CYIR::runOnFunction(Function &F) {
 
     errs() << "runOnFunction(" << F.getName().str() << ")\n";
 
-    this->transformBitManipulation(F);
 
   return false;
-}
-
-bool RISCVRI5CYIR::transformBitManipulation(Function &F) {
-
-    for (auto& BB : F) {
-        for (auto& I : BB) {
-            
-            if ( I.getOpcode() == Instruction::And ) {
-                // Manage BSET and BCLR
-
-                Value *op1 = I.getOperand(0);
-                Value *op2 = I.getOperand(1);
-                unsigned size = op2->getType()->getPrimitiveSizeInBits();          
-			          unsigned int immediate = 0;
-                if (isa<ConstantInt>(op1) && size >= 16 && size <=32) {
-				          immediate = cast<ConstantInt>(op1)->getLimitedValue(~(uint32_t)0);
-                } else if (isa<ConstantInt>(op2) && size >= 16 && size <=32) {
-				          immediate = cast<ConstantInt>(op2)->getLimitedValue(~(uint32_t)0);
-                }
-
-		          	if (immediate == 0)	{ errs() << "IMM=0\n"; continue; }
-
-
-			          // Now we have to check if the immediate is in the form 111100...00111
-			          // or we cannot do anything.
-			          unsigned int limit_l;
-			          unsigned int limit_r;
-
-/*
-                if (!bitIntervalExtraction(immediate, limit_l, limit_r)) {
-                    continue;
-                }
-
-		          	errs() << "ADD L " << limit_l << " R " << limit_r << '\n';
-  
-                RISCVMetadata md(RISCVMetadata::SPECIALIZED);
-                md.addImmediate(0,limit_l);
-                md.addImmediate(1,limit_r);
-                ArrayRef arr_immediate( { md } );
-                MDNode metanode( F.getContext(), RISCV_RI5CY_MNODE_ID, 
-                                 MDNode::Uniqued, arr_immediate);  
-                I.setMetadata(RISCVMetadata::Metadata_ID, metanode);*/
-            }
-
-      }
-  }
-
-    return false;
 }
 
 
@@ -290,7 +239,5 @@ extern bool RI5CY_pclip_check(SelectionDAG* CurDAG, const SDValue &Dest, SDValue
 
   return true;
 }
-
-
 
 

@@ -1,6 +1,5 @@
-#define DEBUG_TYPE "riscv-ri5cy-passes"
-
 #include <map>
+#include <stack>
 
 #include "RISCV.h"
 #include "RISCVInstrBuilder.h"
@@ -53,7 +52,6 @@ public:
 
   const RISCVTargetMachine *TM; 
   SelectionDAG * dag = NULL;
-  bool transformBitManipulation(Function &F);
 
   private:
 
@@ -82,7 +80,5 @@ private:
     std::map<int,int> immediates;
 
 };
-
-
 
 }

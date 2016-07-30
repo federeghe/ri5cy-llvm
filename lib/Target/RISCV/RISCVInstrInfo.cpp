@@ -83,12 +83,12 @@ bool RISCVInstrInfo::AnalyzeBranch(MachineBasicBlock &MBB,
                                      MachineBasicBlock *&FBB,
                                      SmallVectorImpl<MachineOperand> &Cond,
                                      bool AllowModify) const {
-
   // Most of the code and comments here are boilerplate.
 
   // Start from the bottom of the block and work up, examining the
   // terminator instructions.
   MachineBasicBlock::iterator I = MBB.end();
+
   while (I != MBB.begin()) {
     --I;
     if (I->isDebugValue())
@@ -108,7 +108,7 @@ bool RISCVInstrInfo::AnalyzeBranch(MachineBasicBlock &MBB,
       return true;
 
     // Can't handle indirect branches.
-    if (!ThisTarget->isMBB())
+    if (I->isIndirectBranch())
       return true;
 
     if (ThisCond[0].getImm() == RISCV::CCMASK_ANY) {
@@ -139,6 +139,15 @@ bool RISCVInstrInfo::AnalyzeBranch(MachineBasicBlock &MBB,
       TBB = ThisTarget->getMBB();
       continue;
     }
+	
+	if (I->getOpcode() == RISCV::HWLOOP_JR) {
+      FBB = TBB;
+      TBB = I->getOperand(1).getMBB();
+      Cond.push_back(MachineOperand::CreateImm(RISCV::HWLOOP_JR));
+      Cond.push_back(I->getOperand(0));
+      return false;
+    }
+    
 
     // Working from the bottom, handle the first conditional branch.
     if (Cond.empty()) {
@@ -342,6 +351,10 @@ RISCVInstrInfo::InsertBranchAtInst(MachineBasicBlock &MBB, MachineInstr *I,
       BuildMI(MBB, I, DL, get(RISCV::BLEU)).addMBB(TBB).addReg(Cond[2].getReg())
           .addReg(Cond[3].getReg());
       break;
+    case RISCV::HWLOOP_JR:
+         BuildMI(MBB, I, DL, get(RISCV::HWLOOP_JR)).addOperand(Cond[1])
+         .addMBB(TBB);
+      break;
     default:
       llvm_unreachable("Invalid branch condition code!");
   }
@@ -469,6 +482,7 @@ RISCVInstrInfo::expandPostRAPseudo(MachineBasicBlock::iterator MI) const {
 bool RISCVInstrInfo::
 ReverseBranchCondition(SmallVectorImpl<MachineOperand> &Cond) const {
   assert(Cond.size() <= 4 && "Invalid branch condition!");
+
   //Only need to switch the condition code, not the registers
   switch (Cond[0].getImm()) {
   case RISCV::CCMASK_CMP_EQ:
@@ -502,6 +516,8 @@ ReverseBranchCondition(SmallVectorImpl<MachineOperand> &Cond) const {
   case RISCV::CCMASK_CMP_LE | RISCV::CCMASK_CMP_UO:
     Cond[0].setImm(RISCV::CCMASK_CMP_GT | RISCV::CCMASK_CMP_UO);
     return false;
+  case RISCV::HWLOOP_JR:
+	return true;
   default:
     llvm_unreachable("Invalid branch condition!");
   }
@@ -571,9 +587,15 @@ bool RISCVInstrInfo::isBranch(const MachineInstr *MI, SmallVectorImpl<MachineOpe
     Target = &MI->getOperand(0);
     return true;
  
+  case RISCV::HWLOOP_JR:
+    Target = &MI->getOperand(0);
+    return true;
 
   default:
-    assert(!MI->getDesc().isBranch() && "Unknown branch opcode");
+    if (MI->getDesc().isBranch()) {
+	    errs() << "ERROR: Opcode " << MI->getOpcode() << " is an unknown branch\n";
+    	llvm_unreachable("Unknown branch opcode");
+	}
     return false;
   }
 }

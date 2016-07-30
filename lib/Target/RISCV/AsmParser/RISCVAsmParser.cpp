@@ -224,7 +224,7 @@ public:
   bool isS64Imm() const { return isImm(-9223372036854775807LL,9223372036854775807LL); }
 
   bool isU5Imm() const { return isImm(0, 31); }
-
+  bool isU1Imm() const { return isImm(0, 1); }
   bool isUimm32contig0() const { return isU32Imm(); }
   bool isUimm32contig1() const { return isU32Imm(); }
 };

@@ -48,6 +48,7 @@ private:
   void printBranchTarget(const MCInst *MI, int OpNum, raw_ostream &O);
   void printBDAddrOperand(const MCInst *MI, int OpNum, raw_ostream &O);
   void printBDXAddrOperand(const MCInst *MI, int OpNum, raw_ostream &O);
+  void printU1ImmOperand(const MCInst *MI, int OpNum, raw_ostream &O);
   void printU5ImmOperand(const MCInst *MI, int OpNum, raw_ostream &O);
   void printS12ImmOperand(const MCInst *MI, int OpNum, raw_ostream &O);
   void printU12ImmOperand(const MCInst *MI, int OpNum, raw_ostream &O);

@@ -39,8 +39,8 @@ class RISCVFunctionInfo : public MachineFunctionInfo {
 public:
   explicit RISCVFunctionInfo(MachineFunction &MF)
     : MF(MF), SavedGPRFrameSize(0), LowSavedGPR(0), HighSavedGPR(0), VarArgsFirstGPR(0),
-      VarArgsFirstFPR(0), VarArgsFrameIndex(0), RegSaveFrameIndex(0),
-      ManipulatesSP(false), CallsEhReturn(false) {}
+      VarArgsFirstFPR(0), VarArgsFrameIndex(0), RegSaveFrameIndex(0), 
+      ManipulatesSP(false), CallsEhReturn(false), HasHWLoops(false) {}
 
   // Get and set the number of bytes allocated by generic code to store
   // call-saved GPRs.
@@ -96,6 +96,11 @@ public:
   void createEhDataRegsFI();
   int getEhDataRegFI(unsigned Reg) const { return EhDataRegFI[Reg]; };
   bool isEhDataRegFI(int FI) const;
+
+  bool HasHWLoops;
+  void setHWLoops(bool hwloops) { HasHWLoops = hwloops; }
+  bool hasHWLoops() const { return HasHWLoops; }
+
 };
 
 } // end llvm namespace

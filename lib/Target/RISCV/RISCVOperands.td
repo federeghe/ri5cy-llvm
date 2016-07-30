@@ -274,6 +274,11 @@ def disp20imm64 : Operand<i64>;
 //===----------------------------------------------------------------------===//
 //RI5CY Extension
 //===----------------------------------------------------------------------===//
+def U1Imm  : ImmediateAsmOperand<"U1Imm">;
+def uimm1 : Immediate<i32, [{
+  return isUInt<1>(N->getSExtValue());
+}], NOOP_SDNodeXForm, "U1Imm">;
+
 def U5Imm  : ImmediateAsmOperand<"U5Imm">;
 def uimm5 : Immediate<i32, [{
   return isUInt<5>(N->getSExtValue());

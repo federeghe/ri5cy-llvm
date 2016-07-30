@@ -79,6 +79,9 @@ void RISCVInstPrinter::printOperand(const MCOperand &MC, raw_ostream &O) {
 
 void RISCVInstPrinter::printInst(const MCInst *MI, raw_ostream &O,
                                    StringRef Annot, const MCSubtargetInfo &STI) {
+
+  errs() << "printInst(" << MI->getOpcode() << ")\n"; 
+
   printInstruction(MI, O);
   printAnnotation(O, Annot);
 }
@@ -123,6 +126,16 @@ void RISCVInstPrinter::printS12ImmOperand(const MCInst *MI, int OpNum,
   if(MI->getOperand(OpNum).isImm()){
     int64_t Value = MI->getOperand(OpNum).getImm();
     assert(isInt<12>(Value) && "Invalid s12imm argument");
+    O << Value;
+  }else
+    printOperand(MI, OpNum, O);
+}
+
+void RISCVInstPrinter::printU1ImmOperand(const MCInst *MI, int OpNum,
+                                           raw_ostream &O) {
+  if(MI->getOperand(OpNum).isImm()){
+    int64_t Value = MI->getOperand(OpNum).getImm();
+    assert(isUInt<1>(Value) && "Invalid u1imm argument");
     O << Value;
   }else
     printOperand(MI, OpNum, O);

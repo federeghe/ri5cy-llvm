@@ -490,3 +490,26 @@ def PC : RISCVReg<"pc">;
 defm PCReg : RISCVRegClass<"PCReg", i32, 32,(add PC), 0>;
 //FP status register
 def FCSR : RISCVReg<"fcsr">;
+
+
+//===----------------------------------------------------------------------===//
+//  Hardware loop register
+//===----------------------------------------------------------------------===//
+class CSRReg<bits<6> group, bits<6> num, string n> : RISCVReg<n> {
+  let HWEncoding{11-6} = group;
+  let HWEncoding{5-0} = num;
+}
+
+
+def LPSTART0 : CSRReg<0b011110, 0b110000, "lpstart[0]">;
+def LPEND0   : CSRReg<0b011110, 0b110001, "lpend[0]">;
+def LPCOUNT0 : CSRReg<0b011110, 0b110010, "lpcount[0]">;
+def LPSTART1 : CSRReg<0b011110, 0b110011, "lpstart[1]">;
+def LPEND1   : CSRReg<0b011110, 0b110100, "lpend[1]">;
+def LPCOUNT1 : CSRReg<0b011110, 0b110101, "lpcount[1]">;
+
+def HWLPCSR : RegisterClass<"RISCV", [i32], 32, 
+              (add LPSTART0, LPSTART1, LPEND0, LPEND1, LPCOUNT0, LPCOUNT1)>;
+
+
+

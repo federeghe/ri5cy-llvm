@@ -8,9 +8,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "RISCVTargetMachine.h"
+#include "RISCVRI5CYLoops.h"
 #include "llvm/CodeGen/Passes.h"
 #include "llvm/CodeGen/TargetLoweringObjectFileImpl.h"
 #include "llvm/Support/TargetRegistry.h"
+#include "llvm/Transforms/Scalar.h"
 
 using namespace llvm;
 
@@ -76,15 +78,23 @@ namespace {
 class RISCVPassConfig : public TargetPassConfig {
 public:
   RISCVPassConfig(RISCVTargetMachine *TM, PassManagerBase &PM)
-    : TargetPassConfig(TM, PM) {}
+    : TargetPassConfig(TM, PM) {
+
+    if (TM->getSubtargetImpl()->isR5CY()) {
+      initializeRISCV_RI5CYLoopInfoPass(*PassRegistry::getPassRegistry());
+    }
+  }
 
   RISCVTargetMachine &getRISCVTargetMachine() const {
     return getTM<RISCVTargetMachine>();
   }
 
+  virtual void addPreRegAlloc() override;
   virtual void addISelPrepare() override;
-  bool addInstSelector() override;
-  void addPreEmitPass() override;
+  virtual bool addInstSelector() override;
+  virtual void addPreEmitPass() override;
+  virtual void addIRPasses() override;
+
 };
 } // end anonymous namespace
 
@@ -105,9 +115,34 @@ bool RISCVPassConfig::addInstSelector() {
 }
 
 void RISCVPassConfig::addPreEmitPass(){
+
+  if (getRISCVTargetMachine().getSubtargetImpl()->isR5CY()) {
+    addPass(createRISCV_RI5CYLoopFinalizer(), false);
+  }
+
   addPass(createRISCVBranchSelectionPass());
 }
 
 TargetPassConfig *RISCVTargetMachine::createPassConfig(PassManagerBase &PM) {
   return new RISCVPassConfig(this, PM);
 }
+
+void RISCVPassConfig::addPreRegAlloc() {
+  if (getRISCVTargetMachine().getSubtargetImpl()->isR5CY()) {
+    addPass(createRISCV_RI5CYLoopOptimizer());
+  }
+}
+
+void RISCVPassConfig::addIRPasses() {
+  if (getRISCVTargetMachine().getSubtargetImpl()->isR5CY()) {
+    addPass(createRISCV_RI5CYLoopSetup());
+
+	  if (getOptLevel() != CodeGenOpt::None) {
+		addPass(createRISCV_RI5CYLoopStrengthReduction());
+	  }
+  }
+
+  TargetPassConfig::addIRPasses();	// Supercall
+}
+
+

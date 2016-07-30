@@ -24,6 +24,7 @@ add_llvm_target(RISCVCodeGen
   RISCVSubtarget.cpp
   RISCVTargetMachine.cpp
   RISCVMachineFunctionInfo.cpp
+  RISCVRI5CYLoops.cpp
   RISCVRI5CYHelpers.cpp
   )
 

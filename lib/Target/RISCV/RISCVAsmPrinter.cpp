@@ -27,6 +27,11 @@ using namespace llvm;
 
 void RISCVAsmPrinter::EmitInstruction(const MachineInstr *MI) {
   RISCVMCInstLower Lower(MF->getContext(), *this);
+
+  if (MI->getOpcode() == RISCV::HWLOOP_JR) {
+	return;
+  }
+
   MCInst LoweredMI;
   Lower.lower(MI, LoweredMI);
   EmitToStreamer(*OutStreamer, LoweredMI);

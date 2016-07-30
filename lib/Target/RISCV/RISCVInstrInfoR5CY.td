@@ -336,3 +336,40 @@ def PADDURN   : InstP2IC<"p.adduRN",0b1011011,0b10,0b110,[],GR32,GR32,uimm5>, Re
 def PSUBRN    : InstP2IC<"p.subRN",0b1011011,0b00,0b111,[],GR32,GR32,uimm5>, Requires<[IsR5CY]>;
 def PSUBURN   : InstP2IC<"p.subuRN",0b1011011,0b10,0b111,[],GR32,GR32,uimm5>, Requires<[IsR5CY]>;
 
+
+
+
+
+//
+//
+//          HW LOOPS INSTRUCTIONS
+//
+//
+
+
+let isBranch = 1, isTerminator = 1, isBarrier = 1, isNotDuplicable = 1 in
+def HWLOOP_JR :
+  Pseudo<(outs), (ins HWLPCSR:$lpid, uimm32:$dest), []>;
+
+def LOOP_CTR :
+  Pseudo<(outs GR32:$r), (ins GR32:$tc, GR32:$btc),
+         [(set i32:$r, (int_riscv_loop_ctr i32:$tc, i32:$btc))]>;
+
+def LOOP_CTR_REF :
+  Pseudo<(outs), (ins GR32:$r),[(int_riscv_loop_ctr_ref i32:$r)]>;
+
+def LPSTARTI : InstHWLoopI<"lp.starti\t$L, $uimmL", 0b1111011, 0b000>, Requires<[IsR5CY]>;
+def LPENDI   : InstHWLoopI<"lp.endi  \t$L, $uimmL"  , 0b1111011, 0b001>, Requires<[IsR5CY]>;
+def LPCOUNT  : InstHWLoop <"lp.count \t$L, $src",  0b1111011, 0b010>, Requires<[IsR5CY]>;
+def LPCOUNTI : InstHWLoopI<"lp.counti\t$L, $uimmL", 0b1111011, 0b011>, Requires<[IsR5CY]>;
+def LPSETUP  : InstHWLoop <"lp.setup \t$L, $src, $uimmL",  0b1111011, 0b100>, Requires<[IsR5CY]>;
+def LPSETUPI : InstHWLoopI<"lp.setupi\t$L, $uimmS, $uimmL", 0b1111011, 0b101>, Requires<[IsR5CY]>;
+
+/*
+def LPSTARTI : InstHWLoopI<"lp.starti\t$L, $uimmL", 0b1111011, 0b000>, Requires<[IsR5CY]>;
+def LPENDI   : InstHWLoopI<"lp.endi\t$L, $uimmL"  , 0b1111011, 0b001>, Requires<[IsR5CY]>;
+def LPCOUNT  : InstHWLoop <"lp.count\t$L, $src",  0b1111011, 0b010>, Requires<[IsR5CY]>;
+def LPCOUNTI : InstHWLoopI<"lp.counti\t$L, $uimmL", 0b1111011, 0b011>, Requires<[IsR5CY]>;
+def LPSETUP  : InstHWLoop <"lp.setup\t$L, $src, $uimmL",  0b1111011, 0b100>, Requires<[IsR5CY]>;
+def LPSETUPI : InstHWLoopI<"lp.setupi\t$L, $uimmS, $uimmL", 0b1111011, 0b101>, Requires<[IsR5CY]>;
+*/

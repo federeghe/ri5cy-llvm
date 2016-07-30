@@ -419,3 +419,37 @@ class InstP1I2C<string mnemonic, bits<7> opcode, bits<2> f2, bits<3> funct3,
   let Inst{6 - 0} = opcode;
 }
 
+
+class InstHWLoop<string fullinst, bits<7> opcode, bits<3> funct3>
+      : InstRISCV<4, (outs), (ins uimm1:$L, GR32:$src, imm32zx20:$uimmL), 
+                fullinst, []> {
+  field bits<32> Inst;
+  bits<12> UIMML;
+  bits<5> RS1;
+  bits<1> L;
+
+  let Inst{31-20} = UIMML;
+  let Inst{19-15} = RS1;
+  let Inst{14-12} = funct3;
+  let Inst{11-8}  = 0;
+  let Inst{7} = L;
+  let Inst{6 - 0} = opcode;
+}
+
+class InstHWLoopI<string fullinst, bits<7> opcode, bits<3> funct3>
+      : InstRISCV<4, (outs), (ins uimm1:$L, imm32zx20:$uimmL, uimm5:$uimmS), 
+                fullinst, []> {
+  field bits<32> Inst;
+  bits<12> UIMML;
+  bits<5> UIMMS;
+  bits<1> L;
+
+  let Inst{31-20} = UIMML;
+  let Inst{19-15} = UIMMS;
+  let Inst{14-12} = funct3;
+  let Inst{11-8}  = 0;
+  let Inst{7} = L;
+  let Inst{6 - 0} = opcode;
+
+}
+
