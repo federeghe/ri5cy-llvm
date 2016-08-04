@@ -1575,34 +1575,42 @@ emitPEXTRACT(MachineInstr *MI, MachineBasicBlock *BB, bool unsign) const {
 MachineBasicBlock *RISCVTargetLowering::
 emitPINSERT(MachineInstr *MI, MachineBasicBlock *BB) const {
 
-	const unsigned dst_pos = 1;
-	const unsigned src_pos = 2;
-	const unsigned imm_pos = 3;
+  const unsigned dst_pos = 1;
+  const unsigned src_pos = 2;
+  const unsigned imm2_pos = 3;
+  const unsigned imm3_pos = 4;
 
-	assert(MI->getNumOperands() == 4);
-	assert(MI->getOperand(dst_pos).isReg());
-	assert(MI->getOperand(src_pos).isReg());
-	assert(MI->getOperand(imm_pos).isImm());
+  // Formal checks
+  assert(MI->getNumOperands() == 5);
+  assert(MI->getOperand(dst_pos).isReg());
+  assert(MI->getOperand(src_pos).isReg());
+  assert(MI->getOperand(imm2_pos).isImm());	// This immediate should be converted
+  assert(MI->getOperand(imm3_pos).isImm());
 
   const TargetInstrInfo *TII = BB->getParent()->getSubtarget().getInstrInfo();
   DebugLoc DL = MI->getDebugLoc();
 
-  int n = MI->getOperand(imm_pos).getImm();
- 
+  // The first immediate corresponds to the mask applied to
+  // the source register via AND. We have to transform it to
+  // a uimm5 corresponding to the position of last bit.
+  int n = MI->getOperand(imm2_pos).getImm();
+  // The second immediate is a 5-bit representing the shift to be
+  // applied to the left
+  int shift_imm = MI->getOperand(imm3_pos).getImm(); 
+
   unsigned int l_pos, r_pos;
 
-  if ( ! RI5CY_bitIntervalExtraction(n, &l_pos, &r_pos, true)) {
+  if ( ! RI5CY_bitIntervalExtraction(n, &l_pos, &r_pos, true) || r_pos != 0) {
       llvm_unreachable("Unexpected PINSERT to invalid immediate.");
       return NULL;
   }
 
-  assert(r_pos <= l_pos);
-  assert(isUInt<5>(r_pos) && isUInt<5>(l_pos));
+  assert(isUInt<5>(l_pos));
+  assert(isUInt<5>(shift_imm));
 
+  // Create the new instruction
   unsigned opcode = RISCV::PINSERT;
-
   MachineInstrBuilder pinsertMI = BuildMI(*BB, MI, DL, TII->get(opcode));
-
 
   // We have to add the destination two times: the first source register in
   // p.insert is the destination.
@@ -1610,7 +1618,9 @@ emitPINSERT(MachineInstr *MI, MachineBasicBlock *BB) const {
   pinsertMI.addOperand(MI->getOperand(dst_pos));
   pinsertMI.addOperand(MI->getOperand(src_pos));
   pinsertMI.addImm(l_pos);
-  pinsertMI.addImm(r_pos);
+  pinsertMI.addImm(shift_imm);
+
+  // Remove old intructions
   MI->eraseFromParent();
 
   return BB;

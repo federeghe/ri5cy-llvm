@@ -287,6 +287,7 @@ def imm32contig0 : Immediate<i32, [{
   if(isInt<32>(N->getSExtValue())) {
       return RI5CY_bitIntervalExtraction(N->getSExtValue());
   }
+  return false;
 }], NOOP_SDNodeXForm, "Uimm32contig0">;
 
 def Uimm32contig1  : ImmediateAsmOperand<"Uimm32contig1">;
@@ -297,4 +298,17 @@ def imm32contig1 : Immediate<i32, [{
   if(isInt<32>(N->getSExtValue())) {
       return RI5CY_bitIntervalExtraction(N->getSExtValue(), NULL, NULL, true);
   }
+  return false;
+}], NOOP_SDNodeXForm, "Uimm32contig1">;
+
+def Uimm32contig1End  : ImmediateAsmOperand<"Uimm32contig1End">;
+def imm32contig1end : Immediate<i32, [{
+  if(isInt<32>(N->getSExtValue())) {
+      unsigned int end;
+      RI5CY_bitIntervalExtraction(N->getSExtValue(), NULL, &end, true);
+      if (end == 0) { 
+        return true;
+      }
+  }
+  return false;
 }], NOOP_SDNodeXForm, "Uimm32contig1">;

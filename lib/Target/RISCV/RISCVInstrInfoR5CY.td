@@ -41,8 +41,8 @@ let usesCustomInserter = 1 in {
                            Requires<[IsR5CY]>;
 
 
-  def PINSERT_PSEUDO : Pseudo_with_cstr<(outs GR32:$dst), (ins GR32:$rd, GR32:$src1, imm32contig0:$src2),
-                           [(set GR32:$dst, (or GR32:$rd, (and GR32:$src1, imm32contig1:$src2)))],"$rd = $dst">,
+  def PINSERT_PSEUDO : Pseudo_with_cstr<(outs GR32:$dst), (ins GR32:$rd, GR32:$src1, imm32contig0:$src2, uimm5:$imm3),
+                           [(set GR32:$dst, (or GR32:$rd, (shl (and GR32:$src1, imm32contig1end:$src2), uimm5:$imm3)))],"$rd = $dst">,
                            Requires<[IsR5CY]>;
 
   def PBCLR_PSEUDO : Pseudo<(outs GR32:$dst), (ins GR32:$src1, imm32contig0:$src2),
