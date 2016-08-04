@@ -147,13 +147,13 @@ public:
                                     std::vector<SDValue> &Ops,
                                     SelectionDAG &DAG) const override;
   MachineBasicBlock *
-  EmitInstrWithCustomInserter(MachineInstr *MI,
+  EmitInstrWithCustomInserter(MachineInstr &MI,
                               MachineBasicBlock *BB) const override;
   SDValue LowerOperation(SDValue Op, SelectionDAG &DAG) const override;
   SDValue LowerFormalArguments(SDValue Chain, CallingConv::ID CallConv,
                                bool isVarArg,
                                const SmallVectorImpl<ISD::InputArg> &Ins,
-                               SDLoc DL, SelectionDAG &DAG,
+                               const SDLoc &DL, SelectionDAG &DAG,
                                SmallVectorImpl<SDValue> &InVals) const override;
   SDValue LowerCall(CallLoweringInfo &CLI,
                     SmallVectorImpl<SDValue> &InVals) const override;
@@ -166,7 +166,7 @@ public:
 
   SDValue LowerReturn(SDValue Chain, CallingConv::ID CallConv, bool IsVarArg,
                       const SmallVectorImpl<ISD::OutputArg> &Outs,
-                      const SmallVectorImpl<SDValue> &OutVals, SDLoc DL,
+                      const SmallVectorImpl<SDValue> &OutVals, const SDLoc &DL,
                       SelectionDAG &DAG) const override;
 
 
@@ -224,9 +224,9 @@ private:
   SDValue getAddrPIC(SDValue Op, SelectionDAG &DAG) const;
 
   // Implement EmitInstrWithCustomInserter for individual operation types.
-  MachineBasicBlock *emitCALL(MachineInstr *MI,
+  MachineBasicBlock *emitCALL(MachineInstr &MI,
                                 MachineBasicBlock *BB) const;
-  MachineBasicBlock *emitSelectCC(MachineInstr *MI,
+  MachineBasicBlock *emitSelectCC(MachineInstr &MI,
                                 MachineBasicBlock *BB) const;
 
   MachineBasicBlock *emitPEXTRACT(MachineInstr *MI, MachineBasicBlock *BB, bool unsign) const;
