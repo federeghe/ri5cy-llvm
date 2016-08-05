@@ -19,8 +19,6 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 
-#warning REMOVE ME
-
 using namespace llvm;
 
 #define DEBUG_TYPE "riscv-isel"

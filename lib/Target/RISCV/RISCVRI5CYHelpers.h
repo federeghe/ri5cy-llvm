@@ -7,8 +7,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "riscv-ri5cy-passes"
-
 #include <map>
 
 #include "RISCV.h"

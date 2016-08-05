@@ -1537,44 +1537,44 @@ emitCALL(MachineInstr &MI, MachineBasicBlock *BB) const {
 
 MachineBasicBlock *RISCVTargetLowering::
 
-emitPEXTRACT(MachineInstr *MI, MachineBasicBlock *BB, bool unsign) const {
+emitPEXTRACT(MachineInstr &MI, MachineBasicBlock *BB, bool unsign) const {
 
 	const unsigned src1_pos = 1;
 	const unsigned imm2_pos = 2;
 	const unsigned imm3_pos = 3;
 
-	assert(MI->getNumOperands() == 4);
-	assert(MI->getOperand(src1_pos).isReg());
-	assert(MI->getOperand(imm2_pos).isImm());
-	assert(MI->getOperand(imm3_pos).isImm());
+	assert(MI.getNumOperands() == 4);
+	assert(MI.getOperand(src1_pos).isReg());
+	assert(MI.getOperand(imm2_pos).isImm());
+	assert(MI.getOperand(imm3_pos).isImm());
 
   const TargetInstrInfo *TII = BB->getParent()->getSubtarget().getInstrInfo();
-  DebugLoc DL = MI->getDebugLoc();
+  DebugLoc DL = MI.getDebugLoc();
 
-  int imm2 = MI->getOperand(imm2_pos).getImm();
-  int imm3 = MI->getOperand(imm3_pos).getImm();
+  int imm2 = MI.getOperand(imm2_pos).getImm();
+  int imm3 = MI.getOperand(imm3_pos).getImm();
 
 
   if (imm2 + imm3 <= 32) {
     MachineInstrBuilder newMI = BuildMI(*BB, MI, DL, TII->get(unsign ? RISCV::PEXTRACTU : RISCV::PEXTRACT));
-    newMI.addOperand(MI->getOperand(0));
-    newMI.addOperand(MI->getOperand(src1_pos));
+    newMI.addOperand(MI.getOperand(0));
+    newMI.addOperand(MI.getOperand(src1_pos));
     newMI.addImm(32 - imm2 - imm3);
     newMI.addImm(imm3);  
   } else {
     // The result is always zero
     MachineInstrBuilder newMI = BuildMI(*BB, MI, DL, TII->get(ISD::SHL));
-    newMI.addOperand(MI->getOperand(0));
-    newMI.addOperand(MI->getOperand(src1_pos));
+    newMI.addOperand(MI.getOperand(0));
+    newMI.addOperand(MI.getOperand(src1_pos));
     newMI.addImm(32);
   }
-  MI->eraseFromParent();
+  MI.eraseFromParent();
 
   return BB;
 }
 
 MachineBasicBlock *RISCVTargetLowering::
-emitPINSERT(MachineInstr *MI, MachineBasicBlock *BB) const {
+emitPINSERT(MachineInstr &MI, MachineBasicBlock *BB) const {
 
   const unsigned dst_pos = 1;
   const unsigned src_pos = 2;
@@ -1582,22 +1582,22 @@ emitPINSERT(MachineInstr *MI, MachineBasicBlock *BB) const {
   const unsigned imm3_pos = 4;
 
   // Formal checks
-  assert(MI->getNumOperands() == 5);
-  assert(MI->getOperand(dst_pos).isReg());
-  assert(MI->getOperand(src_pos).isReg());
-  assert(MI->getOperand(imm2_pos).isImm());	// This immediate should be converted
-  assert(MI->getOperand(imm3_pos).isImm());
+  assert(MI.getNumOperands() == 5);
+  assert(MI.getOperand(dst_pos).isReg());
+  assert(MI.getOperand(src_pos).isReg());
+  assert(MI.getOperand(imm2_pos).isImm());	// This immediate should be converted
+  assert(MI.getOperand(imm3_pos).isImm());
 
   const TargetInstrInfo *TII = BB->getParent()->getSubtarget().getInstrInfo();
-  DebugLoc DL = MI->getDebugLoc();
+  DebugLoc DL = MI.getDebugLoc();
 
   // The first immediate corresponds to the mask applied to
   // the source register via AND. We have to transform it to
   // a uimm5 corresponding to the position of last bit.
-  int n = MI->getOperand(imm2_pos).getImm();
+  int n = MI.getOperand(imm2_pos).getImm();
   // The second immediate is a 5-bit representing the shift to be
   // applied to the left
-  int shift_imm = MI->getOperand(imm3_pos).getImm(); 
+  int shift_imm = MI.getOperand(imm3_pos).getImm(); 
 
   unsigned int l_pos, r_pos;
 
@@ -1615,42 +1615,42 @@ emitPINSERT(MachineInstr *MI, MachineBasicBlock *BB) const {
 
   // We have to add the destination two times: the first source register in
   // p.insert is the destination.
-  pinsertMI.addOperand(MI->getOperand(0));
-  pinsertMI.addOperand(MI->getOperand(dst_pos));
-  pinsertMI.addOperand(MI->getOperand(src_pos));
+  pinsertMI.addOperand(MI.getOperand(0));
+  pinsertMI.addOperand(MI.getOperand(dst_pos));
+  pinsertMI.addOperand(MI.getOperand(src_pos));
   pinsertMI.addImm(l_pos);
   pinsertMI.addImm(shift_imm);
 
   // Remove old intructions
-  MI->eraseFromParent();
+  MI.eraseFromParent();
 
   return BB;
 }
 
 
 MachineBasicBlock *RISCVTargetLowering::
-emitPBCLRSET(MachineInstr *MI, MachineBasicBlock *BB, bool isset) const {
+emitPBCLRSET(MachineInstr &MI, MachineBasicBlock *BB, bool isset) const {
 
     // TODO formal checks
 
 
     const TargetInstrInfo *TII = BB->getParent()->getSubtarget().getInstrInfo();
-    DebugLoc DL = MI->getDebugLoc();
+    DebugLoc DL = MI.getDebugLoc();
 
     unsigned int registr   = 0;
     unsigned int immediate = 0;
 
-    if (MI->getOperand(1).isImm()) {
+    if (MI.getOperand(1).isImm()) {
         immediate = 1;
         registr = 2;
-    } else if (MI->getOperand(2).isImm()) {
+    } else if (MI.getOperand(2).isImm()) {
         immediate = 2;
         registr = 1;
     }
 
     assert(immediate!=0 && registr!=0);
 
-    int n = MI->getOperand(immediate).getImm();
+    int n = MI.getOperand(immediate).getImm();
    
     unsigned int l_pos, r_pos;
 
@@ -1664,23 +1664,23 @@ emitPBCLRSET(MachineInstr *MI, MachineBasicBlock *BB, bool isset) const {
     unsigned opcode = isset ? RISCV::PBSET : RISCV::PBCLR;
 
     MachineInstrBuilder pbclrMI = BuildMI(*BB, MI, DL, TII->get(opcode));
-    pbclrMI.addOperand(MI->getOperand(0));
-    pbclrMI.addOperand(MI->getOperand(registr));
+    pbclrMI.addOperand(MI.getOperand(0));
+    pbclrMI.addOperand(MI.getOperand(registr));
     pbclrMI.addImm(l_pos-r_pos+1);
     pbclrMI.addImm(r_pos);
-    MI->eraseFromParent();
+    MI.eraseFromParent();
 
     return BB;
 }
 
 MachineBasicBlock *RISCVTargetLowering::
-emitPRN(MachineInstr *MI, MachineBasicBlock *BB) const {
+emitPRN(MachineInstr &MI, MachineBasicBlock *BB) const {
 
 	assert(Subtarget.isR5CY());
 
 	bool unsign, issub;
 
-	switch(MI->getOpcode()) {
+	switch(MI.getOpcode()) {
 	    case RISCV::PADDRN_PSEUDO:
             unsign = false; issub = false;
         break;
@@ -1699,7 +1699,7 @@ emitPRN(MachineInstr *MI, MachineBasicBlock *BB) const {
 	}
 
     const TargetInstrInfo *TII = BB->getParent()->getSubtarget().getInstrInfo();
-    DebugLoc DL = MI->getDebugLoc();
+    DebugLoc DL = MI.getDebugLoc();
     
 
     const unsigned int reg1 = 1;
@@ -1707,13 +1707,13 @@ emitPRN(MachineInstr *MI, MachineBasicBlock *BB) const {
     const unsigned int imm1 = 3;
     const unsigned int imm2 = 4;
 
-    assert(MI->getOperand(reg1).isReg());
-    assert(MI->getOperand(reg2).isReg());
-    assert(MI->getOperand(imm1).isImm());
-    assert(MI->getOperand(imm2).isImm());
+    assert(MI.getOperand(reg1).isReg());
+    assert(MI.getOperand(reg2).isReg());
+    assert(MI.getOperand(imm1).isImm());
+    assert(MI.getOperand(imm2).isImm());
 
-    int n1 = MI->getOperand(imm1).getImm();
-    int n2 = MI->getOperand(imm2).getImm();
+    int n1 = MI.getOperand(imm1).getImm();
+    int n2 = MI.getOperand(imm2).getImm();
 
 	// A lot of conditions here...
     if (    n1 > 0
@@ -1725,28 +1725,28 @@ emitPRN(MachineInstr *MI, MachineBasicBlock *BB) const {
 		unsigned opcode = issub ? (unsign ? RISCV::PSUBURN : RISCV::PSUBRN) : (unsign ? RISCV::PADDURN : RISCV::PADDRN);
 
         MachineInstrBuilder paddrnMI = BuildMI(*BB, MI, DL, TII->get(opcode));
-        paddrnMI.addOperand(MI->getOperand(0));
-        paddrnMI.addOperand(MI->getOperand(reg1));
-        paddrnMI.addOperand(MI->getOperand(reg2));
+        paddrnMI.addOperand(MI.getOperand(0));
+        paddrnMI.addOperand(MI.getOperand(reg1));
+        paddrnMI.addOperand(MI.getOperand(reg2));
         paddrnMI.addImm(n2);
     } else {
         MachineInstrBuilder sra  = BuildMI(*BB, MI, DL, TII->get(unsign ? RISCV::SRL : RISCV::SRA));
-        sra.addOperand(MI->getOperand(0));
-        sra.addOperand(MI->getOperand(0));
+        sra.addOperand(MI.getOperand(0));
+        sra.addOperand(MI.getOperand(0));
         sra.addImm(n2);
 
 		MachineInstrBuilder addsub = BuildMI(*BB, sra.getInstr(), DL, TII->get(RISCV::ADDI));
-		addsub.addOperand(MI->getOperand(0));
-		addsub.addOperand(MI->getOperand(0));
+		addsub.addOperand(MI.getOperand(0));
+		addsub.addOperand(MI.getOperand(0));
 		addsub.addImm(n1);
 
         MachineInstrBuilder add = BuildMI(*BB, addsub.getInstr(), DL, TII->get(issub ? RISCV::SUB : RISCV::ADD));
-        add.addOperand(MI->getOperand(0));
-        add.addOperand(MI->getOperand(reg1));
-        add.addOperand(MI->getOperand(reg2));
+        add.addOperand(MI.getOperand(0));
+        add.addOperand(MI.getOperand(reg1));
+        add.addOperand(MI.getOperand(reg2));
 
     }
-    MI->eraseFromParent();
+    MI.eraseFromParent();
     return BB;
 
 }
@@ -1898,7 +1898,7 @@ EmitInstrWithCustomInserter(MachineInstr &MI, MachineBasicBlock *MBB) const {
   }
 }
 
-
+/*
 SDValue RISCVTargetLowering::PerformDAGCombine(SDNode *N, DAGCombinerInfo &DCI) const {
 
 	SelectionDAG &DAG = DCI.DAG;
@@ -1907,11 +1907,9 @@ SDValue RISCVTargetLowering::PerformDAGCombine(SDNode *N, DAGCombinerInfo &DCI) 
         default: break;
 
     }
-//            printf("PerformDAGCombine(2) %i\n", N->getOpcode());
-	//return TargetLowering::PerformDAGCombine(N, DCI);
 
     return SDValue();
-}
+}*/
 
 
 
