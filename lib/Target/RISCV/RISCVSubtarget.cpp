@@ -36,7 +36,7 @@ RISCVSubtarget &RISCVSubtarget::initializeSubtargetDependencies(StringRef CPU,
 RISCVSubtarget::RISCVSubtarget(const Triple &TT, const std::string &CPU,
                                const std::string &FS, const TargetMachine &TM)
     : RISCVGenSubtargetInfo(TT, CPU, FS), RISCVArchVersion(RV32), HasM(false),
-      HasA(false), HasF(false), HasD(false), TargetTriple(TT),
+      HasA(false), HasF(false), HasD(false), R5CYExtension(false), TargetTriple(TT),
       InstrInfo(initializeSubtargetDependencies(CPU,FS)), TLInfo(TM, *this), TSInfo(), FrameLowering() {}
 
 // Return true if GV binds locally under reloc model RM.

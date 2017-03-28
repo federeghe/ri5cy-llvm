@@ -48,6 +48,8 @@ protected:
 
   bool UseSoftFloat;
 
+  bool R5CYExtension;
+
 private:
   Triple TargetTriple;
   RISCVInstrInfo InstrInfo;
@@ -71,6 +73,8 @@ public:
 
   bool isRV32() const { return RISCVArchVersion == RV32; };
   bool isRV64() const { return RISCVArchVersion == RV64; };
+
+  bool isR5CY() const { return R5CYExtension; };
 
   bool hasM() const { return HasM; };
   bool hasA() const { return HasA; };
