@@ -23,6 +23,9 @@
                  AssemblerPredicate<"FeatureD">; 
  def HasA   :    Predicate<"Subtarget.hasA()">,
                  AssemblerPredicate<"FeatureA">; 
+ def IsR5CY    :    Predicate<"Subtarget.isR5CY()">,
+                    AssemblerPredicate<"FeatureR5CY">; 
+ def IsNOTR5CY :    Predicate<"!Subtarget.isR5CY()">;
 
 /*******************
 *RISCV Instructions
@@ -427,4 +430,4 @@ include "RISCVInstrInfoM.td"
 include "RISCVInstrInfoF.td"
 include "RISCVInstrInfoA.td"
 include "RISCVInstrInfoD.td"
-
+include "RISCVInstrInfoR5CY.td"
