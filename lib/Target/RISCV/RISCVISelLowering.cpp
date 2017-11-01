@@ -397,7 +397,13 @@ RISCVTargetLowering::RISCVTargetLowering(const TargetMachine &tm,
   setOperationAction(ISD::VACOPY , MVT::Other, Expand);
   setOperationAction(ISD::VAEND  , MVT::Other, Expand);
 
-
+  if(Subtarget.isR5CY()) {
+    setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i8, Legal);
+    setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i16, Legal);
+  } else {
+    setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i8, Expand);
+    setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i16, Expand);
+}
   // Compute derived properties from the register classes
   computeRegisterProperties(STI.getRegisterInfo());
 }
@@ -1588,7 +1594,150 @@ EmitInstrWithCustomInserter(MachineInstr &MI, MachineBasicBlock *MBB) const {
   case RISCV::CALL64:
   case RISCV::CALLREG64:
       return emitCALL(MI, MBB);
+
+  case RISCV::PMULSRN_PSEUDO:
+  case RISCV::PMULHHSRN_PSEUDO:
+  case RISCV::PMULURN_PSEUDO:
+  case RISCV::PMULHHURN_PSEUDO:
+  case RISCV::PMACSRN_PSEUDO:
+  case RISCV::PMACHHSRN_PSEUDO:
+  case RISCV::PMACURN_PSEUDO:
+  case RISCV::PMACHHURN_PSEUDO:
+      return emitMRN(MI, MBB);
+
   default:
     llvm_unreachable("Unexpected instr type to insert");
   }
 }
+
+
+MachineBasicBlock *RISCVTargetLowering::
+emitMRN(MachineInstr &MI, MachineBasicBlock *BB) const {
+
+	assert(Subtarget.isR5CY());
+
+	bool unsign, highbit, ismac;
+
+	switch(MI.getOpcode()) {
+	    case RISCV::PMULSRN_PSEUDO:
+            unsign = false; highbit = false; ismac = false;
+        break;
+	    case RISCV::PMULHHSRN_PSEUDO:
+            unsign = false; highbit = true; ismac = false;
+        break;
+	    case RISCV::PMULURN_PSEUDO:
+            unsign = true; highbit = false; ismac = false;
+        break;
+	    case RISCV::PMULHHURN_PSEUDO:
+            unsign = true; highbit = true; ismac = false;
+        break;
+	    case RISCV::PMACSRN_PSEUDO:
+            unsign = false; highbit = false; ismac = true;
+        break;
+	    case RISCV::PMACHHSRN_PSEUDO:
+            unsign = false; highbit = true; ismac = true;
+        break;
+	    case RISCV::PMACURN_PSEUDO:
+            unsign = true; highbit = false; ismac = true;
+        break;
+	    case RISCV::PMACHHURN_PSEUDO:
+            unsign = true; highbit = true; ismac = true;
+        break;
+
+	  default:
+		llvm_unreachable("Unexpected emitPRN");
+	}
+
+    const TargetInstrInfo *TII = BB->getParent()->getSubtarget().getInstrInfo();
+    DebugLoc DL = MI.getDebugLoc();
+    
+
+    const unsigned int reg1 = 1;
+    const unsigned int reg2 = 2;
+    const unsigned int imm1 = 3;
+    const unsigned int imm2 = 4;
+
+    assert(MI.getOperand(reg1).isReg());
+    assert(MI.getOperand(reg2).isReg());
+    assert(MI.getOperand(imm1).isImm());
+    assert(MI.getOperand(imm2).isImm());
+
+    int n1 = MI.getOperand(imm1).getImm();
+    int n2 = MI.getOperand(imm2).getImm();
+
+	// A lot of conditions here...
+    if (    n1 > 0
+		 && n2 > 0 
+		 && __builtin_popcount(n1) == 1
+		 && n1 == (1 << (n2-1)) 
+		 && n2 < (1<<6) 
+	   ) {
+		unsigned opcode = unsign ? (highbit? (ismac? RISCV::PMACHHURN : RISCV::PMULHHURN) : (ismac? RISCV::PMACURN : RISCV::PMULURN)) : (highbit ? (ismac? RISCV::PMACHHSRN : RISCV::PMULHHSRN ) : (ismac?RISCV::PMACSRN :RISCV::PMULSRN));
+
+        MachineInstrBuilder pmrnMI = BuildMI(*BB, MI, DL, TII->get(opcode));
+        pmrnMI.addOperand(MI.getOperand(0));
+        pmrnMI.addOperand(MI.getOperand(reg1));
+        pmrnMI.addOperand(MI.getOperand(reg2));
+        pmrnMI.addImm(n2);
+    } else {
+	MachineFunction *F = BB->getParent();
+	//unsigned vReg1 = F->getSubtarget<RISCV>().getRegInfo().createVirtualRegister(&RISCV::GR32);
+	//unsigned vReg1 = F.getSubtarget<RISCV>().getRegInfo().createVirtualRegister(&RISCV::GR32);
+	unsigned vReg1 = F->getRegInfo().createVirtualRegister(&RISCV::GR32BitRegClass);
+	unsigned vReg2 = F->getRegInfo().createVirtualRegister(&RISCV::GR32BitRegClass);
+        auto prevInstr = &MI;
+
+	if(highbit){
+	MachineInstrBuilder shr1  = BuildMI(*BB, MI, DL, TII->get(unsign ? RISCV::SRL : RISCV::SRA), vReg1);
+        shr1.addOperand(MI.getOperand(reg1));
+        shr1.addImm(16);
+
+	MachineInstrBuilder shr2  = BuildMI(*BB, shr1.getInstr(), DL, TII->get(unsign ? RISCV::SRL : RISCV::SRA), vReg2);
+        shr2.addOperand(MI.getOperand(reg2));
+        shr2.addImm(16);
+	prevInstr = shr2.getInstr();
+	} else {
+
+	MachineInstrBuilder ext1  = BuildMI(*BB, prevInstr, DL, TII->get(unsign ? RISCV::PEXTHZ : RISCV::PEXTHS), vReg1);
+        
+
+	MachineInstrBuilder ext2  = BuildMI(*BB, ext1.getInstr(), DL, TII->get(unsign ? RISCV::PEXTHZ : RISCV::PEXTHS), vReg2);
+        
+	
+		ext1.addOperand(MI.getOperand(reg1));
+		ext2.addOperand(MI.getOperand(reg2));
+		prevInstr = ext2.getInstr();
+	
+	}
+        MachineInstrBuilder mul  = BuildMI(*BB, prevInstr, DL, TII->get(RISCV::MUL), vReg1);
+        mul.addReg(vReg1); 
+        mul.addReg(vReg2); 
+
+        prevInstr = mul.getInstr();
+
+	if(ismac){
+
+	MachineInstrBuilder addmac = BuildMI(*BB, mul.getInstr(), DL, TII->get(RISCV::ADD), vReg1);
+        addmac.addReg(vReg1);
+        addmac.addOperand(MI.getOperand(0));
+        prevInstr = addmac.getInstr();
+
+	}
+
+
+
+        MachineInstrBuilder add = BuildMI(*BB, prevInstr, DL, TII->get(RISCV::ADDI), vReg1);
+        add.addReg(vReg1);
+        add.addImm(n2);
+
+	MachineInstrBuilder sra  = BuildMI(*BB, MI, DL, TII->get(RISCV::SRA)); //sra
+        sra.addOperand(MI.getOperand(0));
+        sra.addReg(vReg1);
+        sra.addImm(n2);
+
+    }
+    MI.eraseFromParent();
+    return BB;
+
+}
+

@@ -23,6 +23,7 @@ class InstRISCV<int size, dag outs, dag ins, string asmstr,
 
   let AddedComplexity = 1;
 
+
   // Used to identify a group of related instructions, such as ST and STY.
   string Function = "";
 
@@ -66,6 +67,7 @@ class InstR<string mnemonic, bits<7> op, bits<7> funct7, bits<3> funct3,
   let Inst{11- 7} = RD;
   let Inst{6 - 0} = op;
 }
+//grep -rnw -e 'SDPatternOperator'
 
 //LR/SC
 class InstLR<string mnemonic, bits<3> funct3,
@@ -253,6 +255,190 @@ class InstJ<bits<7> op, dag outs, dag ins, string asmstr, list<dag> pattern>
   let Inst{6 - 0} = op;
 }
 
+//MAC-Type
+/*
+class InstMAC<string mnemonic, bits<7> op, bits<3> funct3, bits<2> f2,
+            RegisterOperand cls1, 
+            RegisterOperand cls2, Immediate imm, string asmstr,
+                  list<dag> pattern>
+  : InstRISCV<4, (outs cls1:$dst), (ins cls2:$src1, cls2:$src2, imm:$ls3),
+                asmstr, pattern> {
+  field bits<32> Inst;
+  bits<5> RD;
+  bits<5> RS1;
+  bits<5> RS2;
+  bits<5> LS3;
+
+  let Inst{31-30} = f2;
+  let Inst{29-25} = LS3;
+  let Inst{24-20} = RS2;
+  let Inst{19-15} = RS1;
+  let Inst{14- 12} = funct3;
+  let Inst{11- 7} = RD;
+  let Inst{6 - 0} = op;
+}
+*/
+//p.mac p.msu
+class InstMAC2<string mnemonic, bits<7> op, bits<7> funct7, bits<3> funct3,
+            SDPatternOperator operator, SDPatternOperator operator2, RegisterOperand cls1, 
+            RegisterOperand cls2, RegisterOperand cls3>
+  : InstRISCV<4, (outs cls1:$dst), (ins cls2:$src1, cls3:$src2, cls3:$rd),
+                mnemonic#"\t$dst, $src1, $src2", 
+                [(set cls1:$dst, (operator (operator2 cls2:$src1, cls3:$src2), cls1:$rd))]> {
+  field bits<32> Inst;
+
+  let Constraints = "$rd = $dst";
+  bits<5> RD;
+  bits<5> RS1;
+  bits<5> RS2;
+
+  let Inst{31-25} = funct7;
+  let Inst{24-20} = RS2;
+  let Inst{19-15} = RS1;
+  let Inst{14-12} = funct3;
+  let Inst{11- 7} = RD;
+  let Inst{6 - 0} = op;
+}
+
+
+//p.mulhhs p.mulhhu
+class InstMACHB<string mnemonic, bits<7> op, bits<2> funct2, bits<3> funct3, 
+            SDPatternOperator operator, SDPatternOperator operator2,  RegisterOperand cls1>
+  : InstRISCV<4, (outs cls1:$dst), (ins cls1:$src1, cls1:$src2),
+                mnemonic#"\t$dst, $src1, $src2", 
+                [(set cls1:$dst, (operator (operator2 cls1:$src1, (i32 16)), (operator2 cls1:$src2, (i32 16))))]> {
+  field bits<32> Inst;
+  bits<5> RD;
+  bits<5> RS1;
+  bits<5> RS2;
+  bits<5> IMM;
+
+  let Inst{31-30} = funct2;
+  let Inst{29-25} = 0b00000;
+  let Inst{24-20} = RS2;
+  let Inst{19-15} = RS1;
+  let Inst{14-12} = funct3;
+  let Inst{11- 7} = RD;
+  let Inst{6 - 0} = op;
+}
+
+//p.muls p.mulu
+class InstMACLB<string mnemonic, bits<7> op, bits<2> funct2, bits<3> funct3, 
+            SDPatternOperator operator, SDPatternOperator operator2, 
+	    RegisterOperand cls1>
+  : InstRISCV<4, (outs cls1:$dst), (ins cls1:$src1, cls1:$src2),
+                mnemonic#"\t$dst, $src1, $src2", 
+                [(set cls1:$dst, (operator (operator2 cls1:$src1), (operator2 cls1:$src2)))]> {
+  field bits<32> Inst;
+
+  bits<5> RD;
+  bits<5> RS1;
+  bits<5> RS2;
+  bits<5> IMM;
+
+  let Inst{31-30} = funct2;
+  let Inst{29-25} = 0b00000;
+  let Inst{24-20} = RS2;
+  let Inst{19-15} = RS1;
+  let Inst{14-12} = funct3;
+  let Inst{11- 7} = RD;
+  let Inst{6 - 0} = op;
+}
+
+//p.mulsn p.mulun
+class InstMACLBS<string mnemonic, bits<7> op, bits<2> funct2, bits<3> funct3,
+            SDPatternOperator operator, SDPatternOperator operator2, SDPatternOperator operator3, 
+	    RegisterOperand cls1, RegisterOperand cls2, RegisterOperand cls3, Immediate imm1>
+  : InstRISCV<4, (outs cls1:$dst), (ins cls2:$src1, cls3:$src2, imm1:$imm1),
+                mnemonic#"\t$dst, $src1, $src2", 
+                [(set cls1:$dst, (operator (operator2 (operator3 cls2:$src1), (operator3 cls3:$src2)), imm1:$imm1))]> {
+  field bits<32> Inst;
+
+  bits<5> RD;
+  bits<5> RS1;
+  bits<5> RS2;
+  bits<5> IMM;
+
+  let Inst{31-30} = funct2;
+  let Inst{29-25} = IMM;
+  let Inst{24-20} = RS2;
+  let Inst{19-15} = RS1;
+  let Inst{14-12} = funct3;
+  let Inst{11- 7} = RD;
+  let Inst{6 - 0} = op;
+}
+
+//p.mulhhsn p.mulhhun
+class InstMACHBS<string mnemonic, bits<7> op, bits<2> funct2, bits<3> funct3,
+            SDPatternOperator operator, SDPatternOperator operator2, SDPatternOperator operator3, 
+RegisterOperand cls1, RegisterOperand cls2, RegisterOperand cls3, Immediate imm1>
+  : InstRISCV<4, (outs cls1:$dst), (ins cls2:$src1, cls2:$src2, imm1:$imm1),
+                mnemonic#"\t$dst, $src1, $src2", 
+                [(set cls1:$dst, (operator (operator2 (operator3 cls2:$src1, (i32 16)), (operator3 cls3:$src2, (i32 16))), imm1:$imm1))]> {
+  field bits<32> Inst;
+
+  bits<5> RD;
+  bits<5> RS1;
+  bits<5> RS2;
+  bits<5> IMM;
+
+  let Inst{31-30} = funct2;
+  let Inst{29-25} = IMM;
+  let Inst{24-20} = RS2;
+  let Inst{19-15} = RS1;
+  let Inst{14-12} = funct3;
+  let Inst{11- 7} = RD;
+  let Inst{6 - 0} = op;
+}
+
+//p.macsn p.macun
+class InstMACLBSA<string mnemonic, bits<7> op, bits<2> funct2, bits<3> funct3,
+            SDPatternOperator operator, SDPatternOperator operator2, SDPatternOperator operator3, SDPatternOperator operator4,
+	    RegisterOperand cls1, RegisterOperand cls2, RegisterOperand cls3, Immediate imm1>
+  : InstRISCV<4, (outs cls1:$dst), (ins cls2:$src1, cls3:$src2, cls1:$rd, imm1:$imm1),
+                mnemonic#"\t$dst, $src1, $src2", 
+                [(set cls1:$dst, (operator (operator2 (operator3 (operator4 cls2:$src1), (operator4 cls2:$src2)), cls1:$rd), imm1:$imm1))]> {
+  field bits<32> Inst;
+  let Constraints = "$rd = $dst";
+  bits<5> RD;
+  bits<5> RS1;
+  bits<5> RS2;
+  bits<5> IMM;
+
+  let Inst{31-30} = funct2;
+  let Inst{29-25} = IMM;
+  let Inst{24-20} = RS2;
+  let Inst{19-15} = RS1;
+  let Inst{14-12} = funct3;
+  let Inst{11- 7} = RD;
+  let Inst{6 - 0} = op;
+}
+
+//p.machhsn p.machhun
+class InstMACHBSA<string mnemonic, bits<7> op, bits<2> funct2, bits<3> funct3,
+            SDPatternOperator operator, SDPatternOperator operator2, SDPatternOperator operator3, SDPatternOperator operator4, 		    		    
+ RegisterOperand cls1, RegisterOperand cls2, RegisterOperand cls3, Immediate imm1>
+  : InstRISCV<4, (outs cls1:$dst), (ins cls2:$src1, cls3:$src2, cls1:$rd, imm1:$imm1),
+                mnemonic#"\t$dst, $src1, $src2", 
+                [(set cls1:$dst, (operator (operator2 (operator3 (operator4 cls2:$src1, (i32 16)), (operator4 cls3:$src2, (i32 16))), cls1:$rd), imm1:$imm1))]> {
+  field bits<32> Inst;
+
+  let Constraints = "$rd = $dst";
+  bits<5> RD;
+  bits<5> RS1;
+  bits<5> RS2;
+  bits<5> IMM;
+
+  let Inst{31-30} = funct2;
+  let Inst{29-25} = IMM;
+  let Inst{24-20} = RS2;
+  let Inst{19-15} = RS1;
+  let Inst{14-12} = funct3;
+  let Inst{11- 7} = RD;
+  let Inst{6 - 0} = op;
+}
+
+
 //===----------------------------------------------------------------------===//
 // Pseudo instructions
 //===----------------------------------------------------------------------===//
@@ -268,3 +454,80 @@ class Pseudo<dag outs, dag ins, list<dag> pattern>
   let isPseudo = 1;
   let isCodeGenOnly = 1;
 }
+// P-Type 2Reg + 1 Imm (custom)
+class InstP2IC<string mnemonic, bits<7> opcode, bits<2> f2, bits<3> funct3,
+            list<dag> pattern,
+            RegisterOperand cls1, RegisterOperand cls2, Immediate imm>
+  : InstRISCV<4, (outs cls1:$dst), (ins cls1:$src1, cls2:$src2, imm:$src3), 
+                mnemonic#"\t$dst, $src1, $src2, $src3", pattern> {
+  field bits<32> Inst;
+
+  bits<5> RD;
+  bits<5> RS1;
+  bits<5> RS2;
+  bits<5> IMM;
+
+  let Inst{31-30} = f2;
+  let Inst{29-25} = IMM;
+  let Inst{24-20} = RS2;
+  let Inst{19-15} = RS1;
+  let Inst{14-12} = funct3;
+  let Inst{11-7} = RD;
+  let Inst{6 - 0} = opcode;
+}
+
+// P-Type 1 Reg (custom)
+class InstP1C<string mnemonic, bits<7> opcode, bits<7> funct7, bits<3> funct3,
+            list<dag> pattern,
+            RegisterOperand cls1>
+  : InstRISCV<4, (outs cls1:$dst), (ins cls1:$src1), 
+                mnemonic#"\t$dst, $src1", pattern> {
+  field bits<32> Inst;
+
+  bits<5> RD;
+  bits<5> RS1;
+
+  let Inst{31-25} = funct7;
+  let Inst{24-20} = 0;
+  let Inst{19-15} = RS1;
+  let Inst{14-12} = funct3;
+  let Inst{11-7} = RD;
+  let Inst{6 - 0} = opcode;
+}
+
+//pmulsrn, pmulurn
+class PMUL<SDPatternOperator operator, SDPatternOperator operator2, SDPatternOperator operator3, SDPatternOperator operator4,
+ RegisterOperand cls1, ImmLeaf imm1, Immediate imm2>
+  : Pseudo<(outs cls1:$dst), (ins cls1:$src1, cls1:$src2, imm1:$imm1, imm2:$imm2), 
+                [(set cls1:$dst, (operator (operator2 (operator3 (operator4 cls1:$src1), (operator4 cls1:$src2)), imm1:$imm1), imm2:$imm2))]> {
+
+}
+
+//pmulhhsrn, pmulhhurn
+class PMULH<SDPatternOperator operator, SDPatternOperator operator2, SDPatternOperator operator3, SDPatternOperator operator4, 
+ RegisterOperand cls1, ImmLeaf imm1, Immediate imm2>
+  : Pseudo<(outs cls1:$dst), (ins cls1:$src1, cls1:$src2, imm1:$imm1, imm2:$imm2),
+                [(set cls1:$dst, (operator (operator2 (operator3 (operator4 cls1:$src1, (i32 16)), (operator4 cls1:$src2, (i32 16))), imm1:$imm1), imm2:$imm2))]> {
+
+}
+
+//pmacsRN, pmacurn
+class PMACL<SDPatternOperator operator, SDPatternOperator operator2, SDPatternOperator operator3, SDPatternOperator operator4, SDPatternOperator operator5,
+ RegisterOperand cls1, ImmLeaf imm1, Immediate imm2>
+  : Pseudo<(outs cls1:$dst), (ins cls1:$src1, cls1:$src2, imm1:$imm1, imm2:$imm2, cls1:$rd),
+                [(set cls1:$dst, (operator (operator2 (operator3 (operator4 (operator5 cls1:$src1), (operator5 cls1:$src2)), cls1:$rd), imm1:$imm1), imm2:$imm2))]> {
+let Constraints = "$rd = $dst";
+
+}
+
+//pmachhsrn, pmachhurn
+class PMACH<SDPatternOperator operator, SDPatternOperator operator2, SDPatternOperator operator3, SDPatternOperator operator4, SDPatternOperator operator5, 
+ RegisterOperand cls1, ImmLeaf imm1, Immediate imm2>
+  : Pseudo<(outs cls1:$dst), (ins cls1:$src1, cls1:$src2, imm1:$imm1, imm2:$imm2, cls1:$rd), 
+                [(set cls1:$dst, (operator (operator2 (operator3 (operator4 (operator5 cls1:$src1, (i32 16)), (operator5 cls1:$src2, (i32 16))), cls1:$rd), imm1:$imm1), imm2:$imm2))]> {
+let Constraints = "$rd = $dst";
+
+}
+
+//grep -Ril "InstP2IC"
+

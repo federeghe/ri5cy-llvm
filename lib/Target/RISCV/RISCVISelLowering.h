@@ -214,6 +214,7 @@ private:
                                 MachineBasicBlock *BB) const;
   MachineBasicBlock *emitSelectCC(MachineInstr &MI,
                                 MachineBasicBlock *BB) const;
+  MachineBasicBlock *emitMRN(MachineInstr &MI, MachineBasicBlock *BB) const;
 
 };
 
