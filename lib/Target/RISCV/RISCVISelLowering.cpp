@@ -1685,6 +1685,8 @@ emitMRN(MachineInstr &MI, MachineBasicBlock *BB) const {
 	//unsigned vReg1 = F.getSubtarget<RISCV>().getRegInfo().createVirtualRegister(&RISCV::GR32);
 	unsigned vReg1 = F->getRegInfo().createVirtualRegister(&RISCV::GR32BitRegClass);
 	unsigned vReg2 = F->getRegInfo().createVirtualRegister(&RISCV::GR32BitRegClass);
+	unsigned vReg4 = F->getRegInfo().createVirtualRegister(&RISCV::GR32BitRegClass);
+	unsigned vReg5 = F->getRegInfo().createVirtualRegister(&RISCV::GR32BitRegClass);
         auto prevInstr = &MI;
 
 	if(highbit){
@@ -1697,11 +1699,11 @@ emitMRN(MachineInstr &MI, MachineBasicBlock *BB) const {
         shr2.addImm(16);
 	prevInstr = shr2.getInstr();
 	} else {
-
-	MachineInstrBuilder ext1  = BuildMI(*BB, prevInstr, DL, TII->get(unsign ? RISCV::PEXTHZ : RISCV::PEXTHS), vReg1);
+	
+	MachineInstrBuilder ext1  = BuildMI(*BB, prevInstr, DL, TII->get(unsign ? RISCV::PEXTHZ : RISCV::PEXTHS), vReg4);
         
 
-	MachineInstrBuilder ext2  = BuildMI(*BB, ext1.getInstr(), DL, TII->get(unsign ? RISCV::PEXTHZ : RISCV::PEXTHS), vReg2);
+	MachineInstrBuilder ext2  = BuildMI(*BB, ext1.getInstr(), DL, TII->get(unsign ? RISCV::PEXTHZ : RISCV::PEXTHS), vReg5);
         
 	
 		ext1.addOperand(MI.getOperand(reg1));
@@ -1709,30 +1711,40 @@ emitMRN(MachineInstr &MI, MachineBasicBlock *BB) const {
 		prevInstr = ext2.getInstr();
 	
 	}
-        MachineInstrBuilder mul  = BuildMI(*BB, prevInstr, DL, TII->get(RISCV::MUL), vReg1);
-        mul.addReg(vReg1); 
-        mul.addReg(vReg2); 
+        unsigned vReg3 = F->getRegInfo().createVirtualRegister(&RISCV::GR32BitRegClass);
+        MachineInstrBuilder mul  = BuildMI(*BB, prevInstr, DL, TII->get(RISCV::MUL), vReg3);
+	if (highbit){
+		mul.addReg(vReg1); 
+		mul.addReg(vReg2); 
+	}else{
+		mul.addReg(vReg4); 
+		mul.addReg(vReg5); 
+	}
 
         prevInstr = mul.getInstr();
 
 	if(ismac){
 
-	MachineInstrBuilder addmac = BuildMI(*BB, mul.getInstr(), DL, TII->get(RISCV::ADD), vReg1);
-        addmac.addReg(vReg1);
+	MachineInstrBuilder addmac = BuildMI(*BB, mul.getInstr(), DL, TII->get(RISCV::ADD));
         addmac.addOperand(MI.getOperand(0));
+        addmac.addOperand(MI.getOperand(0));
+        addmac.addReg(vReg3); 
         prevInstr = addmac.getInstr();
 
 	}
 
-
-
-        MachineInstrBuilder add = BuildMI(*BB, prevInstr, DL, TII->get(RISCV::ADDI), vReg1);
-        add.addReg(vReg1);
+        MachineInstrBuilder add = BuildMI(*BB, prevInstr, DL, TII->get(RISCV::ADDI));
+        add.addOperand(MI.getOperand(0));
+	if (ismac){
+		add.addOperand(MI.getOperand(0)); 
+	}else{
+		add.addReg(vReg3); 
+	}
         add.addImm(n2);
 
 	MachineInstrBuilder sra  = BuildMI(*BB, MI, DL, TII->get(RISCV::SRA)); //sra
         sra.addOperand(MI.getOperand(0));
-        sra.addReg(vReg1);
+        sra.addOperand(MI.getOperand(0));
         sra.addImm(n2);
 
     }

@@ -345,12 +345,14 @@ class InstMACLB<string mnemonic, bits<7> op, bits<2> funct2, bits<3> funct3,
   let Inst{6 - 0} = op;
 }
 
+
+
 //p.mulsn p.mulun
 class InstMACLBS<string mnemonic, bits<7> op, bits<2> funct2, bits<3> funct3,
             SDPatternOperator operator, SDPatternOperator operator2, SDPatternOperator operator3, 
 	    RegisterOperand cls1, RegisterOperand cls2, RegisterOperand cls3, Immediate imm1>
   : InstRISCV<4, (outs cls1:$dst), (ins cls2:$src1, cls3:$src2, imm1:$imm1),
-                mnemonic#"\t$dst, $src1, $src2", 
+                mnemonic#"\t$dst, $src1, $src2, $imm1", 
                 [(set cls1:$dst, (operator (operator2 (operator3 cls2:$src1), (operator3 cls3:$src2)), imm1:$imm1))]> {
   field bits<32> Inst;
 
@@ -373,7 +375,7 @@ class InstMACHBS<string mnemonic, bits<7> op, bits<2> funct2, bits<3> funct3,
             SDPatternOperator operator, SDPatternOperator operator2, SDPatternOperator operator3, 
 RegisterOperand cls1, RegisterOperand cls2, RegisterOperand cls3, Immediate imm1>
   : InstRISCV<4, (outs cls1:$dst), (ins cls2:$src1, cls2:$src2, imm1:$imm1),
-                mnemonic#"\t$dst, $src1, $src2", 
+                mnemonic#"\t$dst, $src1, $src2, $imm1", 
                 [(set cls1:$dst, (operator (operator2 (operator3 cls2:$src1, (i32 16)), (operator3 cls3:$src2, (i32 16))), imm1:$imm1))]> {
   field bits<32> Inst;
 
@@ -396,7 +398,7 @@ class InstMACLBSA<string mnemonic, bits<7> op, bits<2> funct2, bits<3> funct3,
             SDPatternOperator operator, SDPatternOperator operator2, SDPatternOperator operator3, SDPatternOperator operator4,
 	    RegisterOperand cls1, RegisterOperand cls2, RegisterOperand cls3, Immediate imm1>
   : InstRISCV<4, (outs cls1:$dst), (ins cls2:$src1, cls3:$src2, cls1:$rd, imm1:$imm1),
-                mnemonic#"\t$dst, $src1, $src2", 
+                mnemonic#"\t$dst, $src1, $src2, $imm1", 
                 [(set cls1:$dst, (operator (operator2 (operator3 (operator4 cls2:$src1), (operator4 cls2:$src2)), cls1:$rd), imm1:$imm1))]> {
   field bits<32> Inst;
   let Constraints = "$rd = $dst";
@@ -419,7 +421,7 @@ class InstMACHBSA<string mnemonic, bits<7> op, bits<2> funct2, bits<3> funct3,
             SDPatternOperator operator, SDPatternOperator operator2, SDPatternOperator operator3, SDPatternOperator operator4, 		    		    
  RegisterOperand cls1, RegisterOperand cls2, RegisterOperand cls3, Immediate imm1>
   : InstRISCV<4, (outs cls1:$dst), (ins cls2:$src1, cls3:$src2, cls1:$rd, imm1:$imm1),
-                mnemonic#"\t$dst, $src1, $src2", 
+                mnemonic#"\t$dst, $src1, $src2, $imm1", 
                 [(set cls1:$dst, (operator (operator2 (operator3 (operator4 cls2:$src1, (i32 16)), (operator4 cls3:$src2, (i32 16))), cls1:$rd), imm1:$imm1))]> {
   field bits<32> Inst;
 
