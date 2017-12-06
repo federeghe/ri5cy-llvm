@@ -27,6 +27,8 @@
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <iostream>
+
 using namespace llvm;
 
 static const MCPhysReg RV32IntRegs[8] = {
@@ -1583,6 +1585,7 @@ emitSelectCC(MachineInstr &MI, MachineBasicBlock *BB) const {
 
 MachineBasicBlock *RISCVTargetLowering::
 EmitInstrWithCustomInserter(MachineInstr &MI, MachineBasicBlock *MBB) const {
+
   switch (MI.getOpcode()) {
   case RISCV::SELECT_CC:
   case RISCV::SELECT_CC64:
@@ -1610,6 +1613,7 @@ EmitInstrWithCustomInserter(MachineInstr &MI, MachineBasicBlock *MBB) const {
   }
 }
 
+#define MRN_DEBUG
 
 MachineBasicBlock *RISCVTargetLowering::
 emitMRN(MachineInstr &MI, MachineBasicBlock *BB) const {
@@ -1681,71 +1685,107 @@ emitMRN(MachineInstr &MI, MachineBasicBlock *BB) const {
         pmrnMI.addImm(n2);
     } else {
 	MachineFunction *F = BB->getParent();
-	//unsigned vReg1 = F->getSubtarget<RISCV>().getRegInfo().createVirtualRegister(&RISCV::GR32);
-	//unsigned vReg1 = F.getSubtarget<RISCV>().getRegInfo().createVirtualRegister(&RISCV::GR32);
 	unsigned vReg1 = F->getRegInfo().createVirtualRegister(&RISCV::GR32BitRegClass);
 	unsigned vReg2 = F->getRegInfo().createVirtualRegister(&RISCV::GR32BitRegClass);
 	unsigned vReg4 = F->getRegInfo().createVirtualRegister(&RISCV::GR32BitRegClass);
 	unsigned vReg5 = F->getRegInfo().createVirtualRegister(&RISCV::GR32BitRegClass);
-        auto prevInstr = &MI;
+
+#ifdef MRN_DEBUG
+	std::cout << "MI.dump()" << std::endl;
+	MI.dump();
+#endif
 
 	if(highbit){
-	MachineInstrBuilder shr1  = BuildMI(*BB, MI, DL, TII->get(unsign ? RISCV::SRL : RISCV::SRA), vReg1);
-        shr1.addOperand(MI.getOperand(reg1));
-        shr1.addImm(16);
+		MachineInstrBuilder shr1  = BuildMI(*BB, MI, DL, TII->get(unsign ? RISCV::SRL : RISCV::SRA), vReg1);
+        	shr1.addOperand(MI.getOperand(reg1));
+        	shr1.addImm(16);
 
-	MachineInstrBuilder shr2  = BuildMI(*BB, shr1.getInstr(), DL, TII->get(unsign ? RISCV::SRL : RISCV::SRA), vReg2);
-        shr2.addOperand(MI.getOperand(reg2));
-        shr2.addImm(16);
-	prevInstr = shr2.getInstr();
+#ifdef MRN_DEBUG
+		std::cout << "shr1->dump()" << std::endl;
+		shr1.getInstr()->dump();
+#endif
+
+		MachineInstrBuilder shr2  = BuildMI(*BB, MI, DL, TII->get(unsign ? RISCV::SRL : RISCV::SRA), vReg2);
+	        shr2.addOperand(MI.getOperand(reg2));
+	        shr2.addImm(16);
+
+#ifdef MRN_DEBUG
+		std::cout << "shr2->dump()" << std::endl;
+		shr2.getInstr()->dump();
+#endif
+
 	} else {
-	
-	MachineInstrBuilder ext1  = BuildMI(*BB, prevInstr, DL, TII->get(unsign ? RISCV::PEXTHZ : RISCV::PEXTHS), vReg4);
-        
 
-	MachineInstrBuilder ext2  = BuildMI(*BB, ext1.getInstr(), DL, TII->get(unsign ? RISCV::PEXTHZ : RISCV::PEXTHS), vReg5);
-        
-	
+		MachineInstrBuilder ext1  = BuildMI(*BB, MI, DL, TII->get(unsign ? RISCV::PEXTHZ : RISCV::PEXTHS), vReg4);
+
+
+		MachineInstrBuilder ext2  = BuildMI(*BB, MI, DL, TII->get(unsign ? RISCV::PEXTHZ : RISCV::PEXTHS), vReg5);
+
+
 		ext1.addOperand(MI.getOperand(reg1));
 		ext2.addOperand(MI.getOperand(reg2));
-		prevInstr = ext2.getInstr();
-	
+
+#ifdef MRN_DEBUG
+		std::cout << "ext1->dump()" << std::endl;
+		ext1.getInstr()->dump();
+		std::cout << "ext2->dump()" << std::endl;
+		ext2.getInstr()->dump();
+#endif
+
 	}
         unsigned vReg3 = F->getRegInfo().createVirtualRegister(&RISCV::GR32BitRegClass);
-        MachineInstrBuilder mul  = BuildMI(*BB, prevInstr, DL, TII->get(RISCV::MUL), vReg3);
+        MachineInstrBuilder mul  = BuildMI(*BB, MI, DL, TII->get(RISCV::MUL), vReg3);
 	if (highbit){
-		mul.addReg(vReg1); 
-		mul.addReg(vReg2); 
+		mul.addReg(vReg1);
+		mul.addReg(vReg2);
 	}else{
-		mul.addReg(vReg4); 
-		mul.addReg(vReg5); 
+		mul.addReg(vReg4);
+		mul.addReg(vReg5);
 	}
 
-        prevInstr = mul.getInstr();
+#ifdef MRN_DEBUG
+	std::cout << "mul->dump()" << std::endl;
+	mul.getInstr()->dump();
+#endif
+
+	unsigned vRegAdd;
 
 	if(ismac){
 
-	MachineInstrBuilder addmac = BuildMI(*BB, mul.getInstr(), DL, TII->get(RISCV::ADD));
-        addmac.addOperand(MI.getOperand(0));
-        addmac.addOperand(MI.getOperand(0));
-        addmac.addReg(vReg3); 
-        prevInstr = addmac.getInstr();
+		vRegAdd = F->getRegInfo().createVirtualRegister(&RISCV::GR32BitRegClass);
+		MachineInstrBuilder addmac = BuildMI(*BB, MI, DL, TII->get(RISCV::ADD), vRegAdd);
+	        addmac.addReg(MI.getOperand(5).getReg());
+	        addmac.addReg(vReg3);
+
+#ifdef MRN_DEBUG
+		std::cout << "addmac->dump()" << std::endl;
+		addmac.getInstr()->dump();
+#endif
 
 	}
 
-        MachineInstrBuilder add = BuildMI(*BB, prevInstr, DL, TII->get(RISCV::ADDI));
-        add.addOperand(MI.getOperand(0));
+	unsigned vRegNew = F->getRegInfo().createVirtualRegister(&RISCV::GR32BitRegClass);
+        MachineInstrBuilder add = BuildMI(*BB, MI, DL, TII->get(RISCV::ADDI), vRegNew);
 	if (ismac){
-		add.addOperand(MI.getOperand(0)); 
+		add.addReg(vRegAdd);
 	}else{
-		add.addReg(vReg3); 
+		add.addReg(vReg3);
 	}
         add.addImm(n2);
 
-	MachineInstrBuilder sra  = BuildMI(*BB, MI, DL, TII->get(RISCV::SRA)); //sra
-        sra.addOperand(MI.getOperand(0));
-        sra.addOperand(MI.getOperand(0));
+#ifdef MRN_DEBUG
+	std::cout << "add->dump()" << std::endl;
+	add.getInstr()->dump();
+#endif
+
+	MachineInstrBuilder sra  = BuildMI(*BB, MI, DL, TII->get(RISCV::SRA), MI.getOperand(0).getReg()); //sra
+        sra.addReg(vRegNew);
         sra.addImm(n2);
+
+#ifdef MRN_DEBUG
+	std::cout << "sra->dump()" << std::endl;
+	sra.getInstr()->dump();
+#endif
 
     }
     MI.eraseFromParent();
